@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoundInk - Arabic TTS</title>
+    <!-- خطوط جوجل الجميلة -->
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="background-elements">
+        <div class="glow-orb orb-1"></div>
+        <div class="glow-orb orb-2"></div>
+    </div>
+
+    <div class="container glass-panel">
+        <header>
+            <h1>SoundInk</h1>
+            <p class="subtitle">محوّل النص إلى صوت عربي ذكي 🎙️</p>
+        </header>
+
+        <main>
+            <div class="input-group">
+                <textarea id="text-input" placeholder="اكتب أو انسخ النص العربي هنا... (سيتم ترجمة الأسماء الإنجليزية وضبط الأرقام تلقائياً)"></textarea>
+            </div>
+
+            <div class="actions">
+                <button id="generate-btn" class="primary-btn">
+                    <span class="btn-text">توليد الصوت</span>
+                    <div class="spinner hidden" id="loading-spinner"></div>
+                </button>
+            </div>
+
+            <!-- النتيجة (تظهر بعد التوليد) -->
+            <div id="result-section" class="hidden result-panel">
+                <h3 class="success-text">🎉 تم تجهيز المقطع بنجاح!</h3>
+                <div class="audio-wrapper">
+                    <audio id="audio-player" controls preload="none"></audio>
+                </div>
+                <a id="download-btn" class="secondary-btn" download="SoundInk_Audio.wav">
+                    ⬇️ بصيغة WAV
+                </a>
+            </div>
+            
+            <div id="error-message" class="error-msg hidden"></div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
