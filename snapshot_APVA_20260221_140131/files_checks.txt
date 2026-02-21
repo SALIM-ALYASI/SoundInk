@@ -1,0 +1,17 @@
+# File/Folder checks
+❌ PLAN APVA_voice_agent_plan.txt
+❌ PLAN agent_podcast_plan.txt
+❌ PLAN PLAN.txt
+✅ DIR  logs
+✅ DIR  tmp
+✅ DIR  profiles
+❌ DIR  speaker
+❌ DIR  listener
+❌ DIR  brain
+❌ FILE start.sh
+❌ FILE check_progress.sh
+❌ FILE speaker/run.py
+❌ FILE listener/run.py
+❌ FILE brain/run.js
+❌ FILE ALYASI_VOICE_AI_MASTER_22050.wav
+❌ FILE output/sample_voice.wav

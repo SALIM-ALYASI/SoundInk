@@ -1,0 +1,26 @@
+{
+  "modes": {
+    "dua": {
+      "max_words": 18,
+      "hard_max_words": 26,
+      "pad_ms_short": 70,
+      "pad_ms_med": 120,
+      "pad_ms_long": 160,
+      "allow_chatty": false
+    },
+    "podcast": {
+      "max_words": 22,
+      "hard_max_words": 32,
+      "pad_ms_short": 50,
+      "pad_ms_med": 80,
+      "pad_ms_long": 120,
+      "allow_chatty": true
+    }
+  },
+  "dua_keywords": ["اللهم", "يا رب", "رب", "اغفر", "اشف", "اشفِ", "ارزق", "عاف", "عافِ"],
+  "protected_patterns": [
+    "اشف[ِ]?[ ]+[^\\s]+[ ]+وعاف[ِ]?[ ]+[^\\s]+",
+    "اللهم[ ]+[^\\n\\.\\!\\؟\\?]+"
+  ],
+  "split_punct": ["،", "…", ".", "!", "؟", ":", "؛"]
+}

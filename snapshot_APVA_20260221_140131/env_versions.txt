@@ -1,0 +1,8 @@
+uname: Darwin Mac-mini-ALYASI-A.local 25.3.0 Darwin Kernel Version 25.3.0: Wed Jan 28 20:49:24 PST 2026; root:xnu-12377.81.4~5/RELEASE_ARM64_T8132 arm64
+python3: Python 3.12.12
+pip3: pip 25.3 from /opt/homebrew/Caskroom/miniforge/base/lib/python3.12/site-packages/pip (python 3.12)
+node: v20.20.0
+npm: 10.8.2
+ffmpeg: ffmpeg version 8.0.1 Copyright (c) 2000-2025 the FFmpeg developers
+built with Apple clang version 17.0.0 (clang-1700.6.3.2)
+sox: sox:      SoX v
