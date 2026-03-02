@@ -1,0 +1,113 @@
+{
+  "tribes_pronunciation": [
+    {
+      "original": "الحجري",
+      "formatted": "الْحَجْرِي",
+      "note": "بفتح الحاء وسكون الجيم لمنع المط"
+    },
+    {
+      "original": "الكندي",
+      "formatted": "الْكِنْدِي",
+      "note": "بكسر الكاف وسكون النون"
+    },
+    {
+      "original": "الياسي",
+      "formatted": "الْيَاسِي",
+      "note": "نطق سريع للياء"
+    },
+    {
+      "original": "المعني",
+      "formatted": "الْمَعْنِي",
+      "note": "بفتح الميم وسكون العين"
+    },
+    {
+      "original": "الشحي",
+      "formatted": "الشِّحِّي",
+      "note": "بكسر الشين وتشديد الحاء"
+    },
+    {
+      "original": "الدرعي",
+      "formatted": "الدَّرْعِي",
+      "note": "بفتح الدال وسكون الراء"
+    },
+    {
+      "original": "الحبسي",
+      "formatted": "الْحَبْسِي",
+      "note": "بفتح الحاء وسكون الباء"
+    }
+  ],
+  "misc_pronunciation": [
+    {
+      "original": "كروبوت",
+      "formatted": "كَرُوبُوت",
+      "note": "مثال لتصحيح النطق الآلي"
+    },
+    {
+      "original": "مستشفى",
+      "formatted": "مُسْتَشْفَى",
+      "note": "مثال لتصحيح نطق عام"
+    }
+  ],
+  "names_pronunciation": [
+    {
+      "original": "Redwood Materials",
+      "formatted": "رِيدْوُود مَاتِيرْيَالْز"
+    },
+    {
+      "original": "Redwood",
+      "formatted": "رِيدْوُود"
+    },
+    {
+      "original": "Google",
+      "formatted": "جُوجَل"
+    },
+    {
+      "original": "Nvidia",
+      "formatted": "إِنْفِيدْيَا"
+    },
+    {
+      "original": "TechCrunch",
+      "formatted": "تِيك كْرَانْش"
+    },
+    {
+      "original": "Tesla",
+      "formatted": "تِسْلَا"
+    },
+    {
+      "original": "JB Straubel",
+      "formatted": "جِي بِي سْتْرُوبِل"
+    },
+    {
+      "original": "Panasonic",
+      "formatted": "بَانَاسُونِيك"
+    },
+    {
+      "original": "Crusoe",
+      "formatted": "كْرُوزُو"
+    },
+    {
+      "original": "Stargate",
+      "formatted": "سْتَارْقِيت"
+    },
+    {
+      "original": "Hyperscalers",
+      "formatted": "هَايْبَرْسْكِيلَرْز"
+    },
+    {
+      "original": "ريدوود",
+      "formatted": "رِيدْوُود"
+    },
+    {
+      "original": "ماكونيل",
+      "formatted": "مَاكُونِيل"
+    },
+    {
+      "original": "كروزو",
+      "formatted": "كْرُوزُو"
+    },
+    {
+      "original": "Apple",
+      "formatted": "أَبِل"
+    }
+  ]
+}

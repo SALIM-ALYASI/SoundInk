@@ -1,0 +1,24 @@
+{
+    "rasis_echo": {
+        "mood": "calm_mystery",
+        "base_pace": 0.95,
+        "echo_strength": "dynamic",
+        "pause_policy": "cinematic",
+        "voices": {
+            "voice1": {
+                "name": "Narrator",
+                "eq_profile": "warm",
+                "reverb_mode": "hall",
+                "pause_multiplier": 1.0,
+                "echo_multiplier": 1.2
+            },
+            "voice2": {
+                "name": "Guest",
+                "eq_profile": "neutral",
+                "reverb_mode": "room",
+                "pause_multiplier": 0.8,
+                "echo_multiplier": 0.8
+            }
+        }
+    }
+}

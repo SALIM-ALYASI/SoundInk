@@ -1,0 +1,208 @@
+
+ECHO / APVA DEVELOPMENT ROADMAP (UPDATED)
+========================================
+
+PROJECT GOAL
+------------
+Transform the current voice agent project into a scalable, modular,
+production-ready AI Voice Engine with API and future SaaS capability.
+
+
+============================================================
+PHASE 01 — STABILIZATION & CLEAN STRUCTURE
+============================================================
+
+Objective:
+Clean the project and prepare a scalable foundation.
+
+Tasks:
+- Remove logs from repository
+- Move work/ and output/ to storage/
+- Add .env and .env.example
+- Centralize configuration loading
+- Implement structured logging system
+- Reorganize folder structure:
+
+/core
+/services
+/agents
+/api
+/storage
+/config
+
+Deliverable:
+Clean, production-ready project structure.
+Phase Status: LOCK WHEN COMPLETE
+
+
+============================================================
+PHASE 02 — BUILD MODULAR ECHO ENGINE
+============================================================
+
+Objective:
+Separate business logic from interface.
+
+Modules to Build:
+
+1) EchoCore
+   - Text processing
+   - Segmentation
+   - Audio generation (per segment)
+
+2) EchoPersona
+   - Voice tone
+   - Speed
+   - Style
+   - Lexicon rules
+
+3) EchoRenderer
+   - WAV to MP3 conversion
+   - Normalize audio
+   - Silence trimming
+
+Deliverable:
+Independent voice engine usable without web interface.
+Phase Status: LOCK WHEN COMPLETE
+
+
+============================================================
+PHASE 02.5 — MERGED FEATURE: ONE PAGE + TWO VOICES + SELF-HEALING
+============================================================
+
+Objective:
+Merge the “Normal Voice” page and “Cinematic Voice” page into ONE workflow
+that generates BOTH outputs, while supporting auto-fix for wrong words and
+automatic cleanup of old/temp files.
+
+A) ONE PAGE — DUAL OUTPUT (NORMAL + CINEMATIC)
+- Single input page (one text box, one generate button)
+- Output 1: Normal voice
+- Output 2: Cinematic voice
+- Cinematic should be produced via processing chain on top of Normal output
+  to keep the SAME voice tone (Normal -> Cinematic Chain -> Cinematic Output)
+
+B) CINEMATIC REORDER / PROCESSING CHAIN
+- Create “cinematic presets” (EQ/Comp/Reverb/Normalize…)
+- Allow intensity options (light / medium / strong)
+- Apply chain consistently per persona/preset
+
+C) SELF-HEALING SEGMENTS (WRONG WORD FIX)
+- Split text into segments (sentences/short paragraphs)
+- Generate Normal audio per segment and stitch into one file
+- If a word is wrong inside a segment:
+  - Delete the FULL segment audio
+  - Regenerate ONLY that segment (normal)
+  - Re-stitch final audio
+- This avoids regenerating the entire long audio every time
+
+D) LEXICON MEMORY (SAVE WRONG WORDS UNTIL CORRECT)
+- Store corrections in: storage/lexicon/user_fixes.json
+- For each wrong word:
+  - original_word
+  - corrected_word (or pronunciation hint)
+  - voice/persona id (optional)
+  - count + last_updated
+- Before every generation:
+  - auto-apply saved corrections to the input text
+- Keep words saved until they become correct consistently
+
+E) AUTO CLEANUP (DELETE OLD OUTPUTS & TEMP FILES)
+- Use session folder structure:
+  storage/sessions/<session_id>/ (normal.wav, normal.mp3, cinematic.mp3, meta.json)
+- On new generation:
+  - remove previous session outputs (or keep last N sessions)
+- Always cleanup temp files:
+  storage/tmp/ (cleanup on start + scheduled cleanup)
+
+Deliverable:
+Single page pipeline that outputs Normal + Cinematic, supports self-healing
+segment regeneration, remembers word corrections, and auto-cleans outputs.
+Phase Status: LOCK WHEN COMPLETE
+
+
+============================================================
+PHASE 03 — API LAYER
+============================================================
+
+Objective:
+Expose engine via clean REST API (supports dual-output + sessions).
+
+Tasks:
+- Build API using FastAPI or Flask
+- Create endpoints:
+  /generate              (returns session_id)
+  /status/<session_id>   (progress + file links)
+  /voices                (available personas/voices)
+  /health                (health check)
+- Add input validation
+- Add rate limiting
+- Standardize error handling
+- Support outputs:
+  - normal
+  - cinematic
+
+Deliverable:
+API-ready voice engine with dual-output support.
+Phase Status: LOCK WHEN COMPLETE
+
+
+============================================================
+PHASE 04 — QUEUE & BACKGROUND PROCESSING
+============================================================
+
+Objective:
+Enable high-load processing with reliable background jobs.
+
+Tasks:
+- Implement job queue (Redis + RQ or Celery)
+- Background processing for:
+  - segmentation generation
+  - cinematic processing chain
+  - stitching final audio
+- Status tracking system per session_id
+- Automatic cleanup scheduler (cron / worker task)
+
+Deliverable:
+Scalable background processing system.
+Phase Status: LOCK WHEN COMPLETE
+
+
+============================================================
+PHASE 05 — PRODUCTIZATION
+============================================================
+
+Objective:
+Prepare system for SaaS deployment.
+
+Tasks:
+- User authentication system
+- Token usage tracking
+- Dashboard with generation history
+- Storage management system (quota / retention / cleanup policies)
+- Billing-ready structure
+
+Optional Advanced Feature:
+EchoVault:
+- Store personas
+- Store presets
+- Store voice profiles
+- Manage effects chains
+
+Deliverable:
+Full product-ready AI Voice Platform.
+Phase Status: FINAL LOCK
+
+
+============================================================
+FINAL VISION
+============================================================
+
+Echo becomes:
+- Modular Voice Engine
+- Single-Page Dual Output Generator (Normal + Cinematic)
+- Self-Healing + Lexicon Memory for persistent word correctness
+- API Service
+- Scalable Backend
+- Future SaaS Product
+
+End of Roadmap.

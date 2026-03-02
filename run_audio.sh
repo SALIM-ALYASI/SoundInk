@@ -10,4 +10,4 @@ python apva.py --text-file input.txt --out final_audio.wav --split --concat --le
 
 # 3. Notify completion
 echo ""
-echo "✅ Done! The final generated audio has been saved to: outputs/raw/final_audio_full.wav"
+echo "✅ Done! The final generated audio has been saved to: storage/outputs/raw/final_audio_full.wav"

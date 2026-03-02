@@ -1,7 +1,0 @@
-{
-  "short_pause": " .. ",
-  "medium_pause": " ... ",
-  "breath_marker": "<breath>",
-  "emphasis_marker": "<em>",
-  "max_emphasis_per_sentence": 1
-}

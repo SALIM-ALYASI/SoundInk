@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SoundInk - Arabic TTS</title>
+    <title>SoundInk - AI Voice Studio</title>
     <!-- خطوط جوجل الجميلة -->
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
 </head>
+
 <body>
     <div class="background-elements">
         <div class="glow-orb orb-1"></div>
@@ -15,38 +17,109 @@
     </div>
 
     <div class="container glass-panel">
-        <header>
-            <h1>SoundInk</h1>
-            <p class="subtitle">محوّل النص إلى صوت عربي ذكي 🎙️</p>
-        </header>
-
-        <main>
-            <div class="input-group">
-                <textarea id="text-input" placeholder="اكتب أو انسخ النص العربي هنا... (سيتم ترجمة الأسماء الإنجليزية وضبط الأرقام تلقائياً)"></textarea>
+        <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div>
+                <h1 style="margin:0;">SoundInk Studio</h1>
+                <p class="subtitle" style="margin:0;">محرك الصوتيات السينمائي المدمج 🎙️🎬</p>
             </div>
 
-            <div class="actions">
+            <div id="auth-section">
+                <button id="show-login-btn" class="secondary-btn">تسجيل الدخول</button>
+            </div>
+            <div id="user-section" class="hidden">
+                <a href="/dashboard" class="secondary-btn" style="background: rgba(74,222,128,0.2);">لوحة التحكم</a>
+                <span id="nav-tokens"
+                    style="color: #4ade80; margin-right: 15px; font-weight: bold; font-family: monospace;">...</span>
+            </div>
+        </header>
+
+        <!-- Auth Modal -->
+        <div id="auth-modal" class="hidden"
+            style="background: rgba(0,0,0,0.5); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1);">
+            <h3 style="margin-top: 0;">تسجيل الدخول / إنشاء حساب</h3>
+            <input type="text" id="auth-email" placeholder="البريد الإلكتروني"
+                style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: white; margin-bottom: 10px;">
+            <input type="password" id="auth-password" placeholder="كلمة المرور"
+                style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: white; margin-bottom: 15px;">
+            <div style="display: flex; gap: 10px;">
+                <button id="login-submit" class="primary-btn" style="flex:1;">دخول</button>
+                <button id="register-submit" class="secondary-btn" style="flex:1;">إنشاء حساب</button>
+            </div>
+            <p id="auth-error" class="hidden" style="color: #f87171; font-size: 0.9em; margin-top: 10px;"></p>
+        </div>
+
+        <main>
+            <!-- 1. Text Input -->
+            <div class="input-group">
+                <label for="text-input">النص المراد تحويله:</label>
+                <textarea id="text-input" placeholder="اكتب أو انسخ النص العربي هنا..."></textarea>
+            </div>
+
+            <!-- 2. Lexicon Quick Add -->
+            <div class="lexicon-group glass-panel"
+                style="margin-top: 15px; padding: 15px; background: rgba(255,255,255,0.05);">
+                <span style="font-size: 0.9em; font-weight: bold; margin-bottom:10px; display:block;">🧠 إضافة للقاموس
+                    (تعديل النطق الإنجليزي للحروف العربية)</span>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="lex-orig" placeholder="الكلمة (مثال: AI)"
+                        style="flex:1; padding: 10px; border-radius: 8px;">
+                    <input type="text" id="lex-corr" placeholder="النطق (مثال: إي آي)"
+                        style="flex:1; padding: 10px; border-radius: 8px;">
+                    <button id="add-lexicon-btn" class="secondary-btn" style="flex:0.5;">حفظ الكلمة</button>
+                </div>
+                <div id="lexicon-msg" style="font-size:0.8em; margin-top:5px; color:#4ade80;"></div>
+            </div>
+
+            <!-- 3. Actions -->
+            <div class="actions" style="margin-top:20px;">
                 <button id="generate-btn" class="primary-btn">
-                    <span class="btn-text">توليد الصوت</span>
+                    <span class="btn-text">توليد (عادي + سينمائي)</span>
                     <div class="spinner hidden" id="loading-spinner"></div>
                 </button>
             </div>
 
-            <!-- النتيجة (تظهر بعد التوليد) -->
+            <!-- 4. Unified Results Area -->
             <div id="result-section" class="hidden result-panel">
-                <h3 class="success-text">🎉 تم تجهيز المقطع بنجاح!</h3>
-                <div class="audio-wrapper">
-                    <audio id="audio-player" controls preload="none"></audio>
+                <h3 class="success-text">🎉 تم تجهيز المقاطع بنجاح!</h3>
+                <input type="hidden" id="current-session-id" value="">
+
+                <div class="outputs-grid"
+                    style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top:20px;">
+                    <!-- Normal Audio -->
+                    <div class="audio-card glass-panel" style="padding:15px; text-align:center;">
+                        <h4>النسخة العادية (بدون تعديلات)</h4>
+                        <audio id="normal-player" controls preload="none" style="width:100%; margin-top:10px;"></audio>
+                        <a id="normal-download" class="secondary-btn" download
+                            style="display:block; margin-top:10px;">⬇️ تحميل MP3</a>
+                    </div>
+
+                    <!-- Cinematic Audio -->
+                    <div class="audio-card glass-panel" style="padding:15px; text-align:center;">
+                        <h4>النسخة السينمائية 🎬</h4>
+                        <audio id="cinematic-player" controls preload="none"
+                            style="width:100%; margin-top:10px;"></audio>
+                        <a id="cinematic-download" class="secondary-btn" download
+                            style="display:block; margin-top:10px;">⬇️ تحميل MP3</a>
+                    </div>
                 </div>
-                <a id="download-btn" class="secondary-btn" download="SoundInk_Audio.wav">
-                    ⬇️ بصيغة WAV
-                </a>
+
+                <!-- 5. Self-Healing Section -->
+                <div id="segments-section" style="margin-top: 30px; text-align: right;">
+                    <h4>🛠️ التصحيح الذكي (Self-Healing)</h4>
+                    <p style="font-size: 0.85em; color: #a1a1aa;">في حال وجود خطأ في نطق جملة معينة، عدل نصها هنا واضغط
+                        "إعادة توليد الجملة" لتحديث المقطع بالكامل دون انتظار طويل.</p>
+
+                    <div id="segments-list" style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;">
+                        <!-- Segments will be injected here via JS -->
+                    </div>
+                </div>
             </div>
-            
+
             <div id="error-message" class="error-msg hidden"></div>
         </main>
     </div>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script src="{{ url_for('static', path='script.js') }}"></script>
 </body>
+
 </html>

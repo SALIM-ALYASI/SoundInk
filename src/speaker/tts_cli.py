@@ -32,8 +32,8 @@ MODEL_NAME = "tts_models/multilingual/multi-dataset/xtts_v2"
 BASE_DIR = Path(__file__).resolve().parents[2]
 SRC_DIR = BASE_DIR / "src"
 
-OUT_DIR = BASE_DIR / "outputs" / "raw"
-OUT_DIR.mkdir(parents=True, exist_ok=True)
+OUT_DIR_DEFAULT = BASE_DIR / "storage" / "outputs" / "raw"
+OUT_DIR_DEFAULT.mkdir(parents=True, exist_ok=True)
 
 DEFAULT_REF = BASE_DIR / "data" / "ref" / "salem_podcast_clean.wav"
 DEFAULT_LEXICON_FILE = BASE_DIR / "configs" / "lexicon.json"
@@ -567,7 +567,8 @@ def main():
 
     ap.add_argument("--text", help="Text to synthesize")
     ap.add_argument("--text-file", help="Path to UTF-8 .txt file (relative to project root allowed)")
-    ap.add_argument("--out", default="salem_test.wav", help="Output wav name (in outputs/raw)")
+    ap.add_argument("--out", default="salem_test.wav", help="Output wav name (in storage/outputs/raw)")
+    ap.add_argument("--out-dir", default=None, help="Custom output directory (overrides storage/outputs/raw)")
     ap.add_argument("--ref", default=str(DEFAULT_REF), help="Reference wav path")
     ap.add_argument("--lang", default="ar", help="Language code (default: ar)")
 
@@ -684,8 +685,10 @@ def main():
         print("⚠️ تنبيه: النص المتبقي بعد التنظيف فارغ تماماً. لا يوجد شيء لتحويله إلى صوت.")
         sys.exit(0)
 
+    out_dir = Path(args.out_dir).resolve() if args.out_dir else OUT_DIR_DEFAULT
+    out_dir.mkdir(parents=True, exist_ok=True)
     tts = TTS(MODEL_NAME)
-    out_path = OUT_DIR / args.out
+    out_path = out_dir / args.out
 
     # Split mode => multiple wavs
     if args.split:
@@ -716,7 +719,7 @@ def main():
 
         part_paths: List[Path] = []
         for i, s in enumerate(segments):
-            p = OUT_DIR / f"{base}_{i:03d}.wav"
+            p = out_dir / f"{base}_{i:03d}.wav"
             tts.tts_to_file(
                 text=s,
                 file_path=str(p),
@@ -727,12 +730,12 @@ def main():
             print("Saved:", p)
 
         if args.concat:
-            full = OUT_DIR / f"{base}_full.wav"
+            full = out_dir / f"{base}_full.wav"
 
             # normalize (optional)
             use_paths = part_paths
             if args.reencode:
-                norm_dir = OUT_DIR / f"{base}_norm"
+                norm_dir = out_dir / f"{base}_norm"
                 norm_dir.mkdir(parents=True, exist_ok=True)
                 norm_paths: List[Path] = []
                 for p in part_paths:
