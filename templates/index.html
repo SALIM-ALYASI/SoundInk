@@ -17,42 +17,39 @@
     </div>
 
     <div class="container glass-panel">
-        <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <div>
-                <h1 style="margin:0;">SoundInk Studio</h1>
-                <p class="subtitle" style="margin:0;">محرك الصوتيات السينمائي المدمج 🎙️🎬</p>
-            </div>
-
-            <div id="auth-section">
-                <button id="show-login-btn" class="secondary-btn">تسجيل الدخول</button>
-            </div>
-            <div id="user-section" class="hidden">
-                <a href="/dashboard" class="secondary-btn" style="background: rgba(74,222,128,0.2);">لوحة التحكم</a>
-                <span id="nav-tokens"
-                    style="color: #4ade80; margin-right: 15px; font-weight: bold; font-family: monospace;">...</span>
-            </div>
+        <header>
+            <h1>SoundInk Studio</h1>
+            <p class="subtitle">محرك الصوتيات السينمائي المدمج 🎙️🎬</p>
         </header>
-
-        <!-- Auth Modal -->
-        <div id="auth-modal" class="hidden"
-            style="background: rgba(0,0,0,0.5); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1);">
-            <h3 style="margin-top: 0;">تسجيل الدخول / إنشاء حساب</h3>
-            <input type="text" id="auth-email" placeholder="البريد الإلكتروني"
-                style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: white; margin-bottom: 10px;">
-            <input type="password" id="auth-password" placeholder="كلمة المرور"
-                style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); color: white; margin-bottom: 15px;">
-            <div style="display: flex; gap: 10px;">
-                <button id="login-submit" class="primary-btn" style="flex:1;">دخول</button>
-                <button id="register-submit" class="secondary-btn" style="flex:1;">إنشاء حساب</button>
-            </div>
-            <p id="auth-error" class="hidden" style="color: #f87171; font-size: 0.9em; margin-top: 10px;"></p>
-        </div>
 
         <main>
             <!-- 1. Text Input -->
             <div class="input-group">
                 <label for="text-input">النص المراد تحويله:</label>
                 <textarea id="text-input" placeholder="اكتب أو انسخ النص العربي هنا..."></textarea>
+
+                <label for="voice-select" style="margin-top: 15px; display: none;">اختيار الصوت (Speaker):</label>
+                <div style="display: none; gap: 10px; align-items: center; margin-top: 5px;">
+                    <select id="voice-select"
+                        style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2);">
+                        <option value="">جاري تحميل الأصوات...</option>
+                    </select>
+                    <button id="preview-btn" class="secondary-btn" title="سماع المقطع"
+                        style="padding: 10px; font-size: 1.2em;">▶️</button>
+                </div>
+                <audio id="preview-player" style="display: none;"></audio>
+
+                <label for="bgm-select" style="margin-top: 15px; display: block;">اختيار الخلفية الموسيقية
+                    (BGM):</label>
+                <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
+                    <select id="bgm-select"
+                        style="flex: 1; padding: 10px; border-radius: 8px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2);">
+                        <option value="">جاري التحميل...</option>
+                    </select>
+                    <button id="bgm-preview-btn" class="secondary-btn" title="سماع المقطع"
+                        style="padding: 10px; font-size: 1.2em;">▶️</button>
+                </div>
+                <audio id="bgm-preview-player" style="display: none;"></audio>
             </div>
 
             <!-- 2. Lexicon Quick Add -->
@@ -119,7 +116,7 @@
         </main>
     </div>
 
-    <script src="{{ url_for('static', path='script.js') }}"></script>
+    <script src="{{ url_for('static', path='script.js') }}?v=2"></script>
 </body>
 
 </html>

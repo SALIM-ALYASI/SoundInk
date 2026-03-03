@@ -61,11 +61,11 @@ class InferenceManager:
         with self.generate_lock:
             # Reconstruct the text processing logic if necessary (clean, lexicon etc.)
             # For Phase 2 we simply replace subprocess invocation with direct execution
-            from speaker.tts_cli import load_lexicon_map, apply_lexicon, clean_for_ar_tts, smart_filter_chatty, diacritize_selective
+            from src.speaker.tts_cli import load_lexicon_map, apply_lexicon, clean_for_ar_tts, smart_filter_chatty, diacritize_selective
             
             # Apply standard cleaning pipeline directly
             # 1. Lexicon
-            lex_file = BASE_DIR / "configs" / "lexicon.json"
+            lex_file = BASE_DIR / "config" / "lexicon.json"
             lex_map = load_lexicon_map(lex_file)
             processed_text = apply_lexicon(text, lex_map)
             

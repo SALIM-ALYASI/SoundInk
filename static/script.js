@@ -2,8 +2,12 @@ document.addEventListener("DOMContentLoaded", () => {
     // Generate Elements
     const generateBtn = document.getElementById("generate-btn");
     const textInput = document.getElementById("text-input");
+    const voiceSelect = document.getElementById("voice-select");
+    const bgmSelect = document.getElementById("bgm-select");
     const spinner = document.getElementById("loading-spinner");
     const btnText = document.querySelector(".btn-text");
+    const previewBtn = document.getElementById("preview-btn");
+    const previewPlayer = document.getElementById("preview-player");
 
     // Result Elements
     const resultSection = document.getElementById("result-section");
@@ -13,6 +17,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const cinematicDownload = document.getElementById("cinematic-download");
     const sessionIdInput = document.getElementById("current-session-id");
     const segmentsList = document.getElementById("segments-list");
+    const bgmPreviewBtn = document.getElementById("bgm-preview-btn");
+    const bgmPreviewPlayer = document.getElementById("bgm-preview-player");
 
     // Lexicon Elements
     const lexOrig = document.getElementById("lex-orig");
@@ -21,92 +27,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const lexiconMsg = document.getElementById("lexicon-msg");
 
     const errorMsg = document.getElementById("error-message");
-
-    // --- 0. Authentication ---
-    const authModal = document.getElementById("auth-modal");
-    const showLoginBtn = document.getElementById("show-login-btn");
-    const loginSubmit = document.getElementById("login-submit");
-    const registerSubmit = document.getElementById("register-submit");
-    const authEmail = document.getElementById("auth-email");
-    const authPassword = document.getElementById("auth-password");
-    const authError = document.getElementById("auth-error");
-    const authSection = document.getElementById("auth-section");
-    const userSection = document.getElementById("user-section");
-    const navTokens = document.getElementById("nav-tokens");
-
-    function getToken() { return localStorage.getItem("auth_token"); }
-    function setToken(t) { localStorage.setItem("auth_token", t); }
-
-    async function checkAuth() {
-        const token = getToken();
-        if (!token) return;
-        try {
-            const res = await fetch("/api/v1/auth/me", { headers: { "Authorization": `Bearer ${token}` } });
-            if (res.ok) {
-                const user = await res.json();
-                authSection.classList.add("hidden");
-                userSection.classList.remove("hidden");
-                navTokens.textContent = user.token_balance.toLocaleString() + " حرف";
-                authModal.classList.add("hidden");
-            } else {
-                localStorage.removeItem("auth_token");
-            }
-        } catch (e) { console.error(e); }
-    }
-
-    checkAuth(); // Run on load
-
-    showLoginBtn.addEventListener("click", () => authModal.classList.toggle("hidden"));
-
-    async function handleAuth(action) {
-        const email = authEmail.value;
-        const password = authPassword.value;
-        if (!email || !password) return authError.textContent = "الرجاء إدخال الإيميل وكلمة المرور", authError.classList.remove("hidden");
-
-        authError.classList.add("hidden");
-        loginSubmit.disabled = true; registerSubmit.disabled = true;
-
-        try {
-            let res;
-            if (action === "register") {
-                res = await fetch("/api/v1/auth/register", {
-                    method: "POST", headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ email, password })
-                });
-            } else {
-                const formData = new URLSearchParams();
-                formData.append('username', email);
-                formData.append('password', password);
-                res = await fetch("/api/v1/auth/login", {
-                    method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                    body: formData
-                });
-            }
-
-            const data = await res.json();
-            if (res.ok) {
-                if (action === "register") {
-                    authError.textContent = "تم التسجيل بنجاح! رجاءً قم بتسجيل الدخول.";
-                    authError.style.color = "#4ade80";
-                    authError.classList.remove("hidden");
-                } else {
-                    setToken(data.access_token);
-                    await checkAuth();
-                }
-            } else {
-                authError.textContent = data.detail || "حدث خطأ";
-                authError.style.color = "#f87171";
-                authError.classList.remove("hidden");
-            }
-        } catch (e) {
-            authError.textContent = "خطأ في الاتصال بالسيرفر";
-            authError.classList.remove("hidden");
-        }
-        loginSubmit.disabled = false; registerSubmit.disabled = false;
-    }
-
-    loginSubmit.addEventListener("click", () => handleAuth("login"));
-    registerSubmit.addEventListener("click", () => handleAuth("register"));
 
     // --- 1. Add Lexicon Entry ---
     addLexiconBtn.addEventListener("click", async () => {
@@ -118,8 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const res = await fetch("/api/v1/lexicon", {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${getToken()}`
+                    "Content-Type": "application/json"
                 },
                 body: JSON.stringify({ original: orig, corrected: corr })
             });
@@ -134,8 +53,101 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    // --- 1.5 Fetch Voices ---
+    async function loadVoices() {
+        try {
+            const res = await fetch("/api/v1/voices");
+            const data = await res.json();
+            voiceSelect.innerHTML = "";
+            if (data.voices && data.voices.length > 0) {
+                data.voices.forEach(v => {
+                    const opt = document.createElement("option");
+                    opt.value = v.id;
+                    opt.textContent = v.name;
+                    voiceSelect.appendChild(opt);
+                });
+            } else {
+                voiceSelect.innerHTML = "<option value=''>لا توجد أصوات متاحة</option>";
+            }
+        } catch (e) {
+            console.error("Failed to load voices", e);
+            voiceSelect.innerHTML = "<option value=''>خطأ في تحميل الأصوات</option>";
+        }
+    }
+    loadVoices();
+
+    // Preview Voice Functionality
+    previewBtn.addEventListener("click", () => {
+        const selectedVoice = voiceSelect.value;
+        if (!selectedVoice) return;
+
+        // Stop current if playing
+        previewPlayer.pause();
+        previewPlayer.src = `/api/v1/voices/${selectedVoice}/preview`;
+
+        // Quick visual feedback
+        previewBtn.textContent = "⏳";
+
+        previewPlayer.play().then(() => {
+            previewBtn.textContent = "🔊";
+        }).catch(err => {
+            console.error("Preview playback failed", err);
+            previewBtn.textContent = "❌";
+        });
+    });
+
+    // Reset button icon when preview ends
+    previewPlayer.addEventListener("ended", () => {
+        previewBtn.textContent = "▶️";
+    });
+
+    // --- 1.6 Fetch BGMs ---
+    async function loadBgms() {
+        try {
+            const res = await fetch("/api/v1/bgms");
+            const data = await res.json();
+            bgmSelect.innerHTML = "<option value=''>بدون مسار محدد (تلقائي)</option>";
+            if (data.bgms && data.bgms.length > 0) {
+                data.bgms.forEach(bgm => {
+                    const opt = document.createElement("option");
+                    opt.value = bgm.id;
+                    opt.textContent = bgm.name;
+                    bgmSelect.appendChild(opt);
+                });
+            }
+        } catch (e) {
+            console.error("Failed to load BGMs", e);
+        }
+    }
+    loadBgms();
+
+    // Preview BGM Functionality
+    bgmPreviewBtn.addEventListener("click", () => {
+        const selectedBgm = bgmSelect.value;
+        if (!selectedBgm) return;
+
+        bgmPreviewPlayer.pause();
+        bgmPreviewPlayer.src = `/api/v1/bgms/${selectedBgm}/preview`;
+        bgmPreviewBtn.textContent = "⏳";
+
+        bgmPreviewPlayer.play().then(() => {
+            bgmPreviewBtn.textContent = "🔊";
+        }).catch(err => {
+            console.error("BGM preview playback failed", err);
+            bgmPreviewBtn.textContent = "❌";
+        });
+    });
+
+    bgmPreviewPlayer.addEventListener("ended", () => {
+        bgmPreviewBtn.textContent = "▶️";
+    });
+
     // --- 2. Main Generation ---
-    generateBtn.addEventListener("click", () => startProcess("/api/v1/generate", { text: textInput.value.trim() }));
+    generateBtn.addEventListener("click", () => startProcess("/api/v1/generate", {
+        text: textInput.value.trim(),
+        voice_id: voiceSelect.value,
+        bgm_id: bgmSelect.value
+    }));
 
     async function startProcess(url, bodyData) {
         if (!bodyData.text && !bodyData.new_text) {
@@ -152,29 +164,17 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         try {
-            const headers = {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${getToken()}`
-            };
-
             const response = await fetch(url, {
                 method: "POST",
-                headers: headers,
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(bodyData)
             });
 
             const data = await response.json();
 
-            if (response.status === 401 || response.status === 402) {
-                throw new Error("يجب تسجيل الدخول / رصيدك لا يكفي.");
-            }
             if (!response.ok) throw new Error(data.detail || "خطأ غير متوقع من الخادم");
 
             pollStatus(data.task_id);
-            // Deduct locally for fast UI update
-            if (data.tokens_remaining) {
-                navTokens.textContent = data.tokens_remaining.toLocaleString() + " حرف";
-            }
         } catch (err) {
             showError(err.message);
             setLoading(false);
@@ -186,7 +186,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const statusRes = await fetch(`/api/v1/status/${taskId}`);
             const statusData = await statusRes.json();
 
-            if (statusRes.status !== 200) throw new Error("خطأ في التحقق من حالة الطلب");
+            if (!statusRes.ok) {
+                throw new Error(statusData.detail || "حدث خطأ غير متوقع أثناء معالجة الصوت خلف الكواليس.");
+            }
 
             if (statusData.status === "completed") {
                 populateResults(statusData);
@@ -210,8 +212,8 @@ document.addEventListener("DOMContentLoaded", () => {
         normalPlayer.src = data.normal_url + `?t=${ts}`;
         cinematicPlayer.src = data.cinematic_url + `?t=${ts}`;
 
-        normalDownload.href = data.normal_url;
-        cinematicDownload.href = data.cinematic_url;
+        normalDownload.href = data.normal_url + "?download=1";
+        cinematicDownload.href = data.cinematic_url + "?download=1";
 
         if (data.session_id) sessionIdInput.value = data.session_id;
 

@@ -15,8 +15,7 @@ from core.celery_app import celery_app
 from sqlalchemy.orm import Session
 from fastapi import Depends
 from core.database import get_db
-from core.models import User, GenerationHistory
-from api.v1.auth import get_current_user
+from core.models import GenerationHistory
 
 # API Router setup
 router = APIRouter()
@@ -35,50 +34,83 @@ async def health_check():
 @router.get("/voices")
 async def list_voices():
     """Returns available base voice IDs."""
-    return {
-        "voices": [
-            {"id": "voice1", "name": "Salem Base (Neutral)"},
-            {"id": "voice2", "name": "Deep Cinema (Trailer)"}
-        ]
-    }
+    import os
+    from pathlib import Path
+    
+    ref_dir = Path(__file__).resolve().parents[2] / "data" / "ref"
+    voices = []
+    
+    if ref_dir.exists():
+        for file in ref_dir.glob("*.wav"):
+            name = file.stem.replace("_", " ").title()
+            voices.append({"id": file.name, "name": name})
+            
+    if not voices:
+        voices = [{"id": "salem_podcast_clean.wav", "name": "Salem Podcast (Default)"}]
+        
+    return {"voices": voices}
+
+@router.get("/voices/{voice_id}/preview")
+async def preview_voice(voice_id: str):
+    """Serve the raw reference audio file for UI preview."""
+    import os
+    from pathlib import Path
+    
+    ref_path = Path(__file__).resolve().parents[2] / "data" / "ref" / voice_id
+    if not ref_path.exists() or not str(ref_path).endswith('.wav'):
+        raise HTTPException(status_code=404, detail="Voice preview not found")
+        
+    return FileResponse(ref_path, media_type="audio/wav")
+
+@router.get("/bgms")
+async def list_bgms():
+    """Returns available background music files."""
+    from pathlib import Path
+    bgm_dir = Path("/Users/alyasi/Downloads/mp3")
+    bgms = []
+    if bgm_dir.exists():
+        for file in bgm_dir.glob("*.mp3"):
+            bgms.append({"id": file.name, "name": file.name})
+    return {"bgms": bgms}
+
+@router.get("/bgms/{bgm_id}/preview")
+async def preview_bgm(bgm_id: str):
+    """Serve the raw BGM audio file for UI preview."""
+    import os
+    from pathlib import Path
+    
+    bgm_path = Path("/Users/alyasi/Downloads/mp3") / bgm_id
+    if not bgm_path.exists() or not str(bgm_path).endswith('.mp3'):
+        raise HTTPException(status_code=404, detail="BGM preview not found")
+        
+    return FileResponse(bgm_path, media_type="audio/mpeg")
 
 @router.post("/generate")
 async def generate_audio(
     request: Request, 
     body: SynthesizeRequest, 
-    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Starts the dual-output generation asynchronously via Celery Queue. Consumes user tokens."""
+    """Starts the dual-output generation asynchronously via Celery Queue."""
     # Apply Rate Limiting
     check_rate_limit(request, max_requests=10, time_window_sec=60)
     
     char_count = len(body.text)
     
-    # Validation: Token check
-    if current_user.token_balance < char_count:
-        raise HTTPException(
-            status_code=402, 
-            detail=f"Insufficient tokens. Request needs {char_count} but you have {current_user.token_balance} left."
-        )
-        
-    # Deduct wallet
-    current_user.token_balance -= char_count
-    
     # Enqueue task to Redis/Celery
-    task = generate_audio_task.delay(body.text, body.voice_id)
+    task = generate_audio_task.delay(body.text, body.voice_id, body.bgm_id)
     
-    # Create History Record (status pending basically, linked via task.id as session_id for now)
+    # Create History Record (anonymous)
     history_record = GenerationHistory(
         session_id=task.id,
-        user_id=current_user.id,
+        user_id="anonymous",
         voice_id=body.voice_id,
         characters_used=char_count
     )
     db.add(history_record)
     db.commit()
     
-    return {"message": "Generation started", "task_id": task.id, "tokens_remaining": current_user.token_balance}
+    return {"message": "Generation started", "task_id": task.id}
 
 @router.get("/status/{task_id}")
 async def get_task_status(task_id: str):
@@ -111,22 +143,21 @@ async def heal_audio_segment(request: Request, body: HealRequest):
 @router.post("/lexicon")
 async def update_lexicon(
     request: Request, 
-    body: LexiconRequest,
-    current_user: User = Depends(get_current_user)
+    body: LexiconRequest
 ):
-    """Add a permanent phonetics bypass into lexicon memory. Requires Login."""
+    """Add a permanent phonetics bypass into lexicon memory."""
     check_rate_limit(request, max_requests=30, time_window_sec=60)
     lexicon.add_correction(body.original, body.corrected)
     return {"error": False, "message": f"Added rule: {body.original} -> {body.corrected}"}
 
 @router.get("/history")
-async def get_user_history(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Returns a list of past generation sessions for the dashboard."""
-    history = db.query(GenerationHistory).filter(GenerationHistory.user_id == current_user.id).order_by(GenerationHistory.created_at.desc()).all()
+async def get_user_history(db: Session = Depends(get_db)):
+    """Returns a list of past generation sessions."""
+    history = db.query(GenerationHistory).order_by(GenerationHistory.created_at.desc()).limit(50).all()
     return {"history": history}
 
 @router.get("/session/{session_id}/{filename}")
-async def fetch_media(session_id: str, filename: str):
+async def fetch_media(session_id: str, filename: str, download: bool = False):
     """Retrieve rendered audio (normal or cinematic)."""
     session_dir = pipeline.session_manager.get_session_dir(session_id)
     audio_path = session_dir / filename
@@ -135,4 +166,7 @@ async def fetch_media(session_id: str, filename: str):
         raise HTTPException(status_code=404, detail="Audio file not found")
         
     mime = "audio/mpeg" if filename.endswith(".mp3") else "audio/wav"
-    return FileResponse(audio_path, media_type=mime, headers={"Cache-Control": "max-age=3600"})
+    headers = {"Cache-Control": "max-age=3600"}
+    if download:
+        return FileResponse(audio_path, media_type=mime, headers=headers, filename=filename, content_disposition_type="attachment")
+    return FileResponse(audio_path, media_type=mime, headers=headers)

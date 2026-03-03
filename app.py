@@ -18,7 +18,6 @@ sys.path.append(str(BASE_DIR))
 from core.config import settings
 from api.middleware import setup_error_handlers
 from api.v1.routes import router as api_v1_router
-from api.v1.auth import auth_router
 from core.database import Base, engine
 
 # Create SQLite Database Tables on Startup
@@ -34,16 +33,11 @@ templates = Jinja2Templates(directory=BASE_DIR / "templates")
 setup_error_handlers(app)
 
 # Include standard REST API versioned routes
-app.include_router(auth_router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(api_v1_router, prefix="/api/v1", tags=["v1"])
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
-
-@app.get("/dashboard", response_class=HTMLResponse)
-async def dashboard(request: Request):
-    return templates.TemplateResponse("dashboard.html", {"request": request})
 
 if __name__ == "__main__":
     import uvicorn

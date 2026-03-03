@@ -20,7 +20,7 @@ class AudioRenderer:
     def _run_ffmpeg(self, cmd: List[str]) -> bool:
         try:
             logger.debug(f"Running FFmpeg: {' '.join(cmd)}")
-            subprocess.run(cmd, check=True, capture_output=True, text=True)
+            subprocess.run(cmd, check=True, capture_output=True, text=True, stdin=subprocess.DEVNULL)
             return True
         except subprocess.CalledProcessError as e:
             logger.error(f"FFmpeg Error: {e.stderr}\nStdout: {e.stdout}")
@@ -43,7 +43,7 @@ class AudioRenderer:
         ]
         self._run_ffmpeg(cmd)
 
-    def concatenate_audio(self, audio_paths: List[Path], pauses: List[float], output_path: Path, work_dir: Path):
+    def concatenate_audio(self, audio_paths: List[Path], pauses: List[float], output_path: Path, work_dir: Path, intro_pause: float = 0.0):
         """
         Takes a list of audio files and a list of pauses (in seconds) to insert between them.
         """
@@ -53,9 +53,14 @@ class AudioRenderer:
         
         try:
             with open(concat_file, 'w', encoding='utf-8') as f:
+                if intro_pause > 0:
+                    silence_path = work_dir / f"intro_silence_{intro_pause}.wav"
+                    self.generate_silence(intro_pause, silence_path)
+                    f.write(f"file '{silence_path.resolve()}'\n")
+
                 for i, seg_path in enumerate(audio_paths):
                     f.write(f"file '{seg_path.resolve()}'\n")
-                    # If there's a pause after this segment and it's not the last one
+                    # If there's a pause after this segment
                     if i < len(pauses) and pauses[i] > 0:
                         silence_path = work_dir / f"silence_{pauses[i]}.wav"
                         self.generate_silence(pauses[i], silence_path)

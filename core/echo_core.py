@@ -53,14 +53,14 @@ class EchoCore:
             out_path = output_dir / out_name
 
             # 3. Resolve Reference Audio
-            # Note: In Phase 2.5 we can load dynamic refs from config.
-            # For now, default fallback to salem_podcast_clean.wav if we don't have a map
-            ref_wav = str(settings.BASE_DIR / "data" / "ref" / "salem_podcast_clean.wav")
+            # The 'speaker_id' is now dynamically passed as the filename from the UI.
+            ref_wav_path = settings.BASE_DIR / "data" / "ref" / speaker_id
             
-            if speaker_id == "voice2":
-                alt_ref = settings.BASE_DIR / "data" / "ref" / "ref_master.wav"
-                if alt_ref.exists():
-                    ref_wav = str(alt_ref)
+            if ref_wav_path.exists():
+                ref_wav = str(ref_wav_path)
+            else:
+                logger.warning(f"Voice {speaker_id} not found. Falling back to default.")
+                ref_wav = str(settings.BASE_DIR / "data" / "ref" / "salem_podcast_clean.wav")
 
             # 4. Generate
             logger.info(f"Generating segment {i} for {speaker_id} -> {out_name}")

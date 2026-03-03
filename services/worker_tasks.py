@@ -20,16 +20,16 @@ session_manager = SessionManager()
 logger = setup_logger("CeleryWorker")
 
 @shared_task(bind=True, name="services.worker_tasks.generate_audio_task")
-def generate_audio_task(self, text: str, voice_id: str = "voice1") -> Dict[str, Any]:
+def generate_audio_task(self, text: str, voice_id: str = "voice1", bgm_id: str = None) -> Dict[str, Any]:
     """
     Heavy lifting: Synthesizes text to dual-output chunks in the background.
     """
-    logger.info(f"Worker started Task {self.request.id} for voice {voice_id}")
+    logger.info(f"Worker started Task {self.request.id} for voice {voice_id} and BGM {bgm_id}")
     self.update_state(state="PROCESSING", meta={'progress': 'Starting Generation'})
     
     try:
         start_time = time.time()
-        result = pipeline.generate_dual_output(text, voice_id)
+        result = pipeline.generate_dual_output(text, voice_id, bgm_id)
         
         if "error" in result:
             logger.error(f"Task {self.request.id} failed: {result['error']}")

@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field, validator
 class SynthesizeRequest(BaseModel):
     text: str = Field(..., max_length=5000, description="The Arabic text to synthesize. Max 5000 characters.")
     voice_id: str = Field("voice1", description="Persona/Voice ID to use. Default is 'voice1'.")
+    bgm_id: Optional[str] = Field(None, description="Background music filename (e.g. resis_1.mp3)")
     
     @validator('text')
     def text_must_not_be_empty(cls, v):
