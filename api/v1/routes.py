@@ -15,7 +15,11 @@ from core.celery_app import celery_app
 from sqlalchemy.orm import Session
 from fastapi import Depends
 from core.database import get_db
+from core.config import settings
+from pathlib import Path as _Path
 from core.models import GenerationHistory
+
+BGM_DIR = settings.BASE_DIR / "assets" / "bgm"
 
 # API Router setup
 router = APIRouter()
@@ -77,8 +81,7 @@ async def preview_voice(voice_id: str):
 @router.get("/bgms")
 async def list_bgms():
     """Returns available background music files."""
-    from pathlib import Path
-    bgm_dir = Path("/Users/alyasi/Downloads/mp3")
+    bgm_dir = BGM_DIR
     bgms = []
     if bgm_dir.exists():
         for file in bgm_dir.glob("*.mp3"):
@@ -88,10 +91,7 @@ async def list_bgms():
 @router.get("/bgms/{bgm_id}/preview")
 async def preview_bgm(bgm_id: str):
     """Serve the raw BGM audio file for UI preview."""
-    import os
-    from pathlib import Path
-    
-    bgm_path = Path("/Users/alyasi/Downloads/mp3") / bgm_id
+    bgm_path = BGM_DIR / bgm_id
     if not bgm_path.exists() or not str(bgm_path).endswith('.mp3'):
         raise HTTPException(status_code=404, detail="BGM preview not found")
         

@@ -25,6 +25,7 @@ class EchoPipeline:
         # We can dynamically decide background music from config later, 
         # but for now we hardcode the cinematic asset as per Phase 1 logic.
         self.default_bgm = settings.BASE_DIR / "echo_agent" / "assets" / "music" / "calm_music.ogg"
+        self.bgm_dir = settings.BASE_DIR / "assets" / "bgm"
 
     def split_into_segments(self, text: str) -> List[str]:
         """Splits long text into manageable sentences for self-healing chunking."""
@@ -136,7 +137,7 @@ class EchoPipeline:
         # Determine BGM Path
         bgm_path = self.default_bgm
         if bgm_id:
-            user_bgm = Path("/Users/alyasi/Downloads/mp3") / bgm_id
+            user_bgm = self.bgm_dir / bgm_id
             if user_bgm.exists():
                 bgm_path = user_bgm
         
@@ -145,8 +146,8 @@ class EchoPipeline:
             speech_path=normal_wav, 
             bgm_path=bgm_path, 
             output_path=cinematic_mp3,
-            bgm_volume=0.50, # 50% during silence
-            duck_ratio=2.0   # Squash it down to roughly 25% during speech (1/2.0 of 50 = 25%)
+            bgm_volume=0.35, # 35% during silence
+            duck_ratio=2.0   # Squash it down to roughly 17.5% during speech (1/2.0 of 35 = 17.5%)
         )
         
         # Save Metadata for self-healing state
@@ -228,7 +229,7 @@ class EchoPipeline:
         bgm_id = meta.get("bgm_id")
         bgm_path = self.default_bgm
         if bgm_id:
-            user_bgm = Path("/Users/alyasi/Downloads/mp3") / bgm_id
+            user_bgm = self.bgm_dir / bgm_id
             if user_bgm.exists():
                 bgm_path = user_bgm
         
@@ -236,8 +237,8 @@ class EchoPipeline:
             speech_path=normal_wav, 
             bgm_path=bgm_path, 
             output_path=cinematic_mp3,
-            bgm_volume=0.50,
-            duck_ratio=2.0
+            bgm_volume=0.35, # 35% during silence
+            duck_ratio=2.0   # Squash it down to roughly 17.5% during speech (1/2.0 of 35 = 17.5%)
         )
         
         # Save updated text

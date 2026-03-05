@@ -3,7 +3,7 @@ echo "Setting up SoundInk 24/7 Background Service..."
 
 # مسارات
 PLIST_PATH="$HOME/Library/LaunchAgents/com.salim.soundink.plist"
-PROJECT_DIR="/Users/alyasi/apva"
+PROJECT_DIR="/Users/alyasi/MyProjects/apva"
 LOG_OUT="$PROJECT_DIR/logs/web_server.log"
 LOG_ERR="$PROJECT_DIR/logs/web_server_err.log"
 

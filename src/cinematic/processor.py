@@ -181,5 +181,6 @@ if __name__ == "__main__":
 
 ومع ذلك، التحديات لم تنته بعد، فالرحلة نحو المجهول محفوفة بالمخاطر والأسرار التي لم تُكتشف."""
     
-    processor = CinematicProcessor(bgm_dir="/Users/alyasi/Downloads/mp3")
+    base = Path(__file__).resolve().parents[2]
+    processor = CinematicProcessor(bgm_dir=str(base / "assets" / "bgm"))
     processor.process_script(sample_text, "final_cinematic_output.mp3")

@@ -10,7 +10,7 @@ from src.cinematic.processor import CinematicProcessor
 def main():
     parser = argparse.ArgumentParser(description="Generate Cinematic Audio from Text")
     parser.add_argument("--script", type=str, required=True, help="Path to text script file (e.g., script.txt)")
-    parser.add_argument("--voice_bank", type=str, default="/Users/alyasi/Downloads/mp3", help="Directory containing voice MP3 files")
+    parser.add_argument("--voice_bank", type=str, default=str(Path(__file__).parent / "assets" / "bgm"), help="Directory containing voice MP3 files")
     parser.add_argument("--transitions", type=str, default="", help="Directory containing transition SFX (optional)")
     parser.add_argument("--output", type=str, default="cinematic_output.mp3", help="Output final audio file path")
 

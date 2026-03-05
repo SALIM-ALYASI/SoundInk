@@ -73,7 +73,7 @@ class FXEngine:
         filter_complex = (
             f"[0:a]volume=1[a0];"
             f"[1:a]volume={bgm_volume}[a1];"
-            f"[a1][a0]sidechaincompress=threshold=0.02:ratio=8:attack=20:release=300:makeup=1[ducked];"
+            f"[a1][a0]sidechaincompress=threshold=0.02:ratio=2.0:attack=20:release=300:makeup=1[ducked];"
             f"[ducked][a0]amix=inputs=2:weights=1 1:normalize=0:duration=first"
         )
 

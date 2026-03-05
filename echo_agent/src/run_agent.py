@@ -77,7 +77,7 @@ def run_pipeline(script_path: str, output_name: str = "final_output", tts_manage
     
     # 5.2 Add Background Music
     bgm_path = str(BASE_DIR / "assets/music/calm_music.mp3")
-    fx.add_background_music(final_wav_no_bgm, bgm_path, final_wav, bgm_volume=0.08)
+    fx.add_background_music(final_wav_no_bgm, bgm_path, final_wav, bgm_volume=0.35)
     
     # 5.3 Convert to MP3
     fx.convert_to_mp3(final_wav, final_mp3)

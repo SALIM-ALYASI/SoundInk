@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"name": "apva",
+			"path": "."
+		},
+		{
+			"name": "mp3",
+			"path": "../Downloads/mp3"
+		}
+	],
+	"settings": {}
+}

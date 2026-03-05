@@ -83,7 +83,7 @@ class AudioRenderer:
             if concat_file.exists():
                 concat_file.unlink()
 
-    def add_background_music(self, speech_path: Path, bgm_path: Path, output_path: Path, bgm_volume: float = 0.35, duck_ratio: float = 8):
+    def add_background_music(self, speech_path: Path, bgm_path: Path, output_path: Path, bgm_volume: float = 0.35, duck_ratio: float = 2.0):
         """
         Mixes speech with a background music track using sidechain compression (ducking).
         """
