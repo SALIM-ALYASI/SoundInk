@@ -50,7 +50,7 @@ class InferenceManager:
                     except ImportError as e:
                         raise ImportError(f"TTS library not found. {e}")
 
-    def generate_audio(self, text: str, output_path: str, ref_wav: str = str(DEFAULT_REF), language: str = "ar", **kwargs):
+    def generate_audio(self, text: str, output_path: str, ref_wav: str = str(DEFAULT_REF), language: str = "ar", speed: float = 0.90, **kwargs):
         """
         Generates audio for a given string of text. Thread-safe!
         kwargs can contain 'speaker_wav', etc., and we map 'ref_wav' to 'speaker_wav'.
@@ -87,11 +87,18 @@ class InferenceManager:
             
             # We can handle long text safely using the split/concat logic from tts_cli but invoking the API directly natively.
             # For now, let's call the tts method!
+            # Apply stricter generation parameters to avoid robotic tone and mixed accents
+            # Lower temperature and top_p make the output more stable and closer to the reference style.
             self.tts.tts_to_file(
                 text=processed_text,
                 file_path=str(output_path),
                 speaker_wav=str(ref_wav),
-                language=language
+                language=language,
+                speed=speed,
+                temperature=0.65,
+                top_k=50,
+                top_p=0.85,
+                repetition_penalty=2.0
             )
 
             print(f"Generated directly from RAM to: {output_path}")

@@ -26,7 +26,7 @@ class EchoCore:
             except ImportError as e:
                 logger.warning(f"Could not automatically load InferenceManager: {e}")
 
-    def generate_audio_from_segments(self, segments: List[Dict[str, Any]], output_dir: Path) -> List[Path]:
+    def generate_audio_from_segments(self, segments: List[Dict[str, Any]], output_dir: Path, speed: float = 0.90) -> List[Path]:
         """
         Takes a list of pre-parsed speaker segments (e.g. from analyzer.py)
         and generates WAV loops for each.
@@ -68,7 +68,8 @@ class EchoCore:
                 self.tts_manager.generate_audio(
                     text=processed_text,
                     output_path=str(out_path),
-                    ref_wav=ref_wav
+                    ref_wav=ref_wav,
+                    speed=speed
                 )
                 generated_paths.append(out_path)
             except Exception as e:
@@ -77,13 +78,13 @@ class EchoCore:
 
         return generated_paths
 
-    def process_single_text(self, text: str, output_path: Path, speaker_id: str = "voice1") -> Path:
+    def process_single_text(self, text: str, output_path: Path, speaker_id: str = "voice1", speed: float = 0.90) -> Path:
         """
         Utility to generate a single block of text without segment mapping.
         """
         temp_seg = [{"speaker": speaker_id, "text": text}]
         out_dir = output_path.parent
-        paths = self.generate_audio_from_segments(temp_seg, out_dir)
+        paths = self.generate_audio_from_segments(temp_seg, out_dir, speed=speed)
         
         if paths:
             # Rename the chunk to the requested output path

@@ -29,12 +29,45 @@ class EchoPipeline:
     def split_into_segments(self, text: str) -> List[str]:
         """Splits long text into manageable sentences for self-healing chunking."""
         # Simple logical split on punctuation or newlines.
-        # Can be enhanced later via analyzer.py logic if complex parsing is needed.
         parts = text.replace('\n', ' ').split('.')
         segments = [p.strip() for p in parts if p.strip()]
         return segments
 
-    def generate_dual_output(self, text: str, voice_id: str = "voice1", bgm_id: str = None) -> Dict[str, Any]:
+    def parse_dialogue(self, text: str) -> List[Dict[str, Any]]:
+        """Parses a dialogue text and automatically maps sentences to the corresponding character voice."""
+        # Split by logical conversational lines instead of just dots
+        lines = [line.strip() for line in text.replace('\r', '\n').split('\n') if line.strip()]
+        segments = []
+        
+        # Default fallback voice if we can't figure it out
+        current_speaker = "salem_podcast_clean.wav" 
+        
+        for line in lines:
+            # Check the prefix of the line to infer the speaker
+            prefix = line[:50]
+            if "الياسي" in prefix:
+                current_speaker = "salem_podcast_clean.wav"
+            elif "سالم" in prefix:
+                current_speaker = "salem_base.wav"
+            elif "ابتسام" in prefix:
+                current_speaker = "female_soft.wav"
+                
+            # Filter out the speaker narration tag if a colon is present (e.g. "قال الياسي: النص")
+            if ':' in line:
+                spoken_text = line.split(':', 1)[1].strip()
+            else:
+                spoken_text = line
+                
+            # Now split this line's content into manageable chunks for TTS
+            parts = spoken_text.split('.')
+            for p in parts:
+                p = p.strip()
+                if p:
+                    segments.append({"speaker": current_speaker, "text": p})
+                    
+        return segments
+
+    def generate_dual_output(self, text: str, voice_id: str = "voice1", bgm_id: str = None, mode: str = "normal") -> Dict[str, Any]:
         """
         1. Creates a Session.
         2. Splits Text.
@@ -46,17 +79,22 @@ class EchoPipeline:
         session_dir = self.session_manager.create_session(session_id)
         tmp_dir = self.session_manager.get_temp_dir(session_id)
         
-        logger.info(f"Starting Unified Pipeline for Session: {session_id}")
+        speed = 0.85 if mode == "cinematic" else 0.90
+        
+        logger.info(f"Starting Unified Pipeline for Session: {session_id} in {mode} mode (speed={speed})")
         
         # Create dict representation for EchoCore
-        parsed_segments = [{"speaker": voice_id, "text": chunk} for chunk in self.split_into_segments(text)]
+        if voice_id == "dialogue":
+            parsed_segments = self.parse_dialogue(text)
+        else:
+            parsed_segments = [{"speaker": voice_id, "text": chunk} for chunk in self.split_into_segments(text)]
         
         if not parsed_segments:
             return {"error": "Text segmenting yielded no content."}
 
         # Step 1: Generate Chunks (Normal)
         logger.info("Generating raw voice chunks...")
-        chunk_paths = self.core.generate_audio_from_segments(parsed_segments, tmp_dir)
+        chunk_paths = self.core.generate_audio_from_segments(parsed_segments, tmp_dir, speed=speed)
         
         # Step 2: Stitch Normal Output
         normal_wav = tmp_dir / "normal_merged.wav"
@@ -75,10 +113,16 @@ class EchoPipeline:
             else:
                 # Inter-segment: Smart dynamic dramatic pauses based on text chunk length
                 segment_len = len(parsed_segments[i]["text"])
-                if segment_len > 80:
-                    pauses.append(round(random.uniform(1.2, 2.0), 2)) # Longer pause for long sentences
+                if mode == "cinematic":
+                    if segment_len > 80:
+                        pauses.append(round(random.uniform(1.8, 2.5), 2)) # Longer pause for long sentences
+                    else:
+                        pauses.append(round(random.uniform(1.0, 1.5), 2)) # Shorter pause for short sentences
                 else:
-                    pauses.append(round(random.uniform(0.6, 1.2), 2)) # Shorter pause for short sentences
+                    if segment_len > 80:
+                        pauses.append(round(random.uniform(1.2, 1.8), 2))
+                    else:
+                        pauses.append(round(random.uniform(0.6, 1.0), 2))
         
         logger.info("Stitching chunks into Normal WAV with Smart Pacing...")
         self.renderer.concatenate_audio(chunk_paths, pauses, normal_wav, tmp_dir, intro_pause=intro_pause)
@@ -101,8 +145,8 @@ class EchoPipeline:
             speech_path=normal_wav, 
             bgm_path=bgm_path, 
             output_path=cinematic_mp3,
-            bgm_volume=0.20,
-            duck_ratio=10.0
+            bgm_volume=0.50, # 50% during silence
+            duck_ratio=2.0   # Squash it down to roughly 25% during speech (1/2.0 of 50 = 25%)
         )
         
         # Save Metadata for self-healing state
@@ -110,6 +154,8 @@ class EchoPipeline:
             "session_id": session_id,
             "voice_id": voice_id,
             "bgm_id": bgm_id,
+            "mode": mode,
+            "speed": speed,
             "segments": parsed_segments,
             "chunk_files": [p.name for p in chunk_paths],
             "pauses": pauses,
@@ -158,8 +204,12 @@ class EchoPipeline:
         if chunk_path.exists():
             chunk_path.unlink() # Delete bad audio
             
+        # Ensure we use the exact voice id mapped to this specific segment, not the global one.
+        segment_speaker = meta["segments"][segment_index].get("speaker", voice_id)
+        
         # Re-generate it
-        self.core.process_single_text(new_text, chunk_path, speaker_id=voice_id)
+        speed = meta.get("speed", 0.90)
+        self.core.process_single_text(new_text, chunk_path, speaker_id=segment_speaker, speed=speed)
         
         # Re-stitch
         chunk_paths = [tmp_dir / name for name in meta["chunk_files"]]
@@ -186,8 +236,8 @@ class EchoPipeline:
             speech_path=normal_wav, 
             bgm_path=bgm_path, 
             output_path=cinematic_mp3,
-            bgm_volume=0.20,
-            duck_ratio=10.0
+            bgm_volume=0.50,
+            duck_ratio=2.0
         )
         
         # Save updated text

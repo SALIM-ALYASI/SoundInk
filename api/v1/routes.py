@@ -42,11 +42,23 @@ async def list_voices():
     
     if ref_dir.exists():
         for file in ref_dir.glob("*.wav"):
-            name = file.stem.replace("_", " ").title()
+            # Provide friendly names for known files
+            if file.name == "salem_base.wav":
+                name = "سالم (النبرة القديمة)"
+            elif file.name == "salem_podcast_clean.wav":
+                name = "الياسي (النبرة الجديدة)"
+            elif file.name == "female_soft.wav":
+                name = "ابتسام (نبرة ناعمة وجديدة)"
+            else:
+                name = file.stem.replace("_", " ").title()
+                
             voices.append({"id": file.name, "name": name})
             
-    if not voices:
-        voices = [{"id": "salem_podcast_clean.wav", "name": "Salem Podcast (Default)"}]
+    # Inject dialogue option at the top of the list
+    voices.insert(0, {"id": "dialogue", "name": "حوار (متعدد الأصوات)"})
+            
+    if len(voices) == 1: # if only dialogue is there
+        voices.append({"id": "salem_podcast_clean.wav", "name": "Salem Podcast (Default)"})
         
     return {"voices": voices}
 
@@ -98,7 +110,7 @@ async def generate_audio(
     char_count = len(body.text)
     
     # Enqueue task to Redis/Celery
-    task = generate_audio_task.delay(body.text, body.voice_id, body.bgm_id)
+    task = generate_audio_task.delay(body.text, body.voice_id, body.bgm_id, body.mode)
     
     # Create History Record (anonymous)
     history_record = GenerationHistory(
