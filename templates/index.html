@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>APVA Voice Studio</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body class="studio-body">
+
+    <div class="bg-layer">
+        <div class="glow glow-1"></div>
+        <div class="glow glow-2"></div>
+        <div class="grid-overlay"></div>
+    </div>
+
+    <main class="studio-shell">
+
+        <header class="studio-header glass-panel">
+            <div class="header-copy">
+                <div class="hero-badge">APVA NEXT • VOICE STUDIO</div>
+                <h1>استوديو الصوت الذكي</h1>
+                <p class="hero-subtitle">
+                    اكتب النص، اختر الصوت، وجرّب المعاينة السريعة أو التوليد الكامل مباشرة من المتصفح.
+                </p>
+            </div>
+
+            <div class="header-tools">
+                <a href="/static/lexicon.html" class="secondary-btn lexicon-link-btn">
+                    <span>فتح استوديو القاموس</span>
+                    <span id="lexicon-alert-dot" class="alert-dot hidden" title="توجد كلمات تحتاج مراجعة"></span>
+                </a>
+            </div>
+        </header>
+
+        <section class="studio-grid">
+
+            <div class="main-column">
+
+                <section class="section-card glass-panel">
+                    <div class="section-head">
+                        <div>
+                            <h2>النص</h2>
+                            <p>أدخل النص الذي تريد تحويله إلى صوت.</p>
+                        </div>
+
+                        <div class="counter-box">
+                            <span>عدد الأحرف</span>
+                            <strong id="char-count">0</strong>
+                        </div>
+                    </div>
+
+                    <textarea
+                        id="text-input"
+                        class="main-textarea"
+                        placeholder="اكتب النص هنا... مثال: مرحبا بكم في بودكاست رسيس"
+                    >مرحبا بكم في بودكاست رسيس</textarea>
+
+                    <div id="error-message" class="error-msg hidden"></div>
+
+                    <div class="action-row">
+                        <button id="preview-btn" class="secondary-btn">معاينة سريعة</button>
+
+                        <button id="generate-btn" class="primary-btn generate-btn">
+                            <span class="btn-text">تشغيل الصوت</span>
+                        </button>
+                    </div>
+
+                    <div class="progress-panel hidden" id="progress-panel">
+                        <div class="progress-stages">
+                            <div class="stage active">
+                                <div class="stage-icon">1</div>
+                                <div class="stage-label">تهيئة</div>
+                            </div>
+
+                            <div class="stage-connector filling"></div>
+
+                            <div class="stage active">
+                                <div class="stage-icon">2</div>
+                                <div class="stage-label">توليد</div>
+                            </div>
+
+                            <div class="stage-connector"></div>
+
+                            <div class="stage">
+                                <div class="stage-icon">3</div>
+                                <div class="stage-label">إرسال</div>
+                            </div>
+                        </div>
+
+                        <div class="progress-track">
+                            <div id="progress-fill" class="progress-fill"></div>
+                        </div>
+
+                        <div id="progress-status" class="progress-status">جاري تجهيز الصوت...</div>
+                        <div id="progress-timer" class="progress-timer">00:00</div>
+                    </div>
+                </section>
+
+                <section class="section-card glass-panel">
+                    <div class="section-head">
+                        <div>
+                            <h2>النتيجة</h2>
+                            <p>الصوت الناتج يظهر هنا مباشرة بعد التوليد الكامل.</p>
+                        </div>
+                    </div>
+
+                    <section id="result-section" class="hidden result-panel glass-subpanel">
+                        <div class="section-head">
+                            <div>
+                                <h2 class="success-text">تم توليد الصوت بنجاح 🎉</h2>
+                                <p>يمكنك الاستماع مباشرة أو تحميل الملف يدويًا.</p>
+                            </div>
+                        </div>
+
+                        <div class="audio-card">
+                            <h3>🎧 النتيجة الصوتية</h3>
+                            <audio id="normal-player" controls preload="none"></audio>
+
+                            <div class="download-row">
+                                <a
+                                    id="download-audio"
+                                    class="secondary-btn hidden"
+                                    download="speech.wav"
+                                    href="#"
+                                >
+                                    تحميل الصوت
+                                </a>
+                            </div>
+                        </div>
+                    </section>
+                </section>
+
+            </div>
+
+            <aside class="side-column">
+
+                <section class="compact-card glass-panel">
+                    <div class="section-head">
+                        <div>
+                            <h3>الصوت</h3>
+                            <p>اختر الصوت المتاح للتوليد.</p>
+                        </div>
+                    </div>
+
+                    <div class="select-row">
+                        <button id="refresh-voices-btn" class="icon-btn" title="تحديث الأصوات">↻</button>
+
+                        <select id="voice-select" class="modern-select">
+                            <option value="">جاري تحميل الأصوات...</option>
+                        </select>
+                    </div>
+
+                    <div class="success-inline" id="voice-status"></div>
+                </section>
+
+                <section class="compact-card glass-panel">
+                    <div class="section-head">
+                        <div>
+                            <h3>المعاينة السريعة</h3>
+                            <p>استمع للنطق بسرعة قبل التوليد الكامل.</p>
+                        </div>
+                    </div>
+
+                    <div class="audio-card glass-subpanel">
+                        <h3>🔊 المعاينة</h3>
+                        <audio id="preview-player" controls preload="none"></audio>
+                    </div>
+                </section>
+
+                <section class="compact-card glass-panel">
+                    <div class="section-head">
+                        <div>
+                            <h3>معلومات النظام</h3>
+                            <p>مرتبطة مباشرة بالـ API الحالي.</p>
+                        </div>
+                    </div>
+
+                    <div class="info-chip-wrap">
+                        <div class="info-chip">API: <span id="api-status">جاري الفحص...</span></div>
+                        <div class="info-chip">النمط: Temporary Audio</div>
+                        <div class="info-chip">المحرك: XTTS</div>
+                    </div>
+                </section>
+
+            </aside>
+
+        </section>
+
+    </main>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>

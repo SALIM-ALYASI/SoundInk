@@ -1,0 +1,213 @@
+{
+  "nodes": [
+    {
+      "module": "api.v1.routes",
+      "path": "api/v1/routes.py"
+    },
+    {
+      "module": "api.v1.schemas",
+      "path": "api/v1/schemas.py"
+    },
+    {
+      "module": "app",
+      "path": "app.py"
+    },
+    {
+      "module": "core.audio_merger",
+      "path": "core/audio_merger.py"
+    },
+    {
+      "module": "core.config",
+      "path": "core/config.py"
+    },
+    {
+      "module": "core.echo_renderer",
+      "path": "core/echo_renderer.py"
+    },
+    {
+      "module": "core.logger",
+      "path": "core/logger.py"
+    },
+    {
+      "module": "core.pipeline",
+      "path": "core/pipeline.py"
+    },
+    {
+      "module": "core.session_manager",
+      "path": "core/session_manager.py"
+    },
+    {
+      "module": "core.voice_registry",
+      "path": "core/voice_registry.py"
+    },
+    {
+      "module": "services.worker_tasks",
+      "path": "services/worker_tasks.py"
+    },
+    {
+      "module": "src.asr.comparator",
+      "path": "src/asr/comparator.py"
+    },
+    {
+      "module": "src.asr.transcriber",
+      "path": "src/asr/transcriber.py"
+    },
+    {
+      "module": "src.brain.architecture_guard",
+      "path": "src/brain/architecture_guard.py"
+    },
+    {
+      "module": "src.brain.auto_cleanup",
+      "path": "src/brain/auto_cleanup.py"
+    },
+    {
+      "module": "src.brain.cleanup_advisor",
+      "path": "src/brain/cleanup_advisor.py"
+    },
+    {
+      "module": "src.brain.dependency_mapper",
+      "path": "src/brain/dependency_mapper.py"
+    },
+    {
+      "module": "src.brain.project_analyzer",
+      "path": "src/brain/project_analyzer.py"
+    },
+    {
+      "module": "src.brain.restructure_planner",
+      "path": "src/brain/restructure_planner.py"
+    },
+    {
+      "module": "src.lexicon.manager",
+      "path": "src/lexicon/manager.py"
+    },
+    {
+      "module": "src.memory.project_memory",
+      "path": "src/memory/project_memory.py"
+    },
+    {
+      "module": "src.podcast.emotion_engine",
+      "path": "src/podcast/emotion_engine.py"
+    },
+    {
+      "module": "src.podcast.podcast_engine",
+      "path": "src/podcast/podcast_engine.py"
+    },
+    {
+      "module": "src.speaker.inference_manager",
+      "path": "src/speaker/inference_manager.py"
+    },
+    {
+      "module": "src.speaker.pronunciation_ai",
+      "path": "src/speaker/pronunciation_ai.py"
+    },
+    {
+      "module": "src.speaker.retry_corrector",
+      "path": "src/speaker/retry_corrector.py"
+    },
+    {
+      "module": "src.speaker.segmenter",
+      "path": "src/speaker/segmenter.py"
+    },
+    {
+      "module": "src.speaker.text_normalizer",
+      "path": "src/speaker/text_normalizer.py"
+    }
+  ],
+  "edges": [
+    {
+      "from": "api.v1.routes",
+      "to": "api.v1.schemas",
+      "type": "local_import"
+    },
+    {
+      "from": "api.v1.routes",
+      "to": "core.audio_merger",
+      "type": "local_import"
+    },
+    {
+      "from": "api.v1.routes",
+      "to": "core.voice_registry",
+      "type": "local_import"
+    },
+    {
+      "from": "api.v1.routes",
+      "to": "src.lexicon.manager",
+      "type": "local_import"
+    },
+    {
+      "from": "api.v1.routes",
+      "to": "src.podcast.podcast_engine",
+      "type": "local_import"
+    },
+    {
+      "from": "api.v1.routes",
+      "to": "src.speaker.inference_manager",
+      "type": "local_import"
+    },
+    {
+      "from": "api.v1.routes",
+      "to": "src.speaker.retry_corrector",
+      "type": "local_import"
+    },
+    {
+      "from": "api.v1.routes",
+      "to": "src.speaker.segmenter",
+      "type": "local_import"
+    },
+    {
+      "from": "api.v1.routes",
+      "to": "src.speaker.text_normalizer",
+      "type": "local_import"
+    },
+    {
+      "from": "app",
+      "to": "api.v1.routes",
+      "type": "local_import"
+    },
+    {
+      "from": "src.podcast.podcast_engine",
+      "to": "src.podcast.emotion_engine",
+      "type": "local_import"
+    },
+    {
+      "from": "src.speaker.inference_manager",
+      "to": "core.voice_registry",
+      "type": "local_import"
+    },
+    {
+      "from": "src.speaker.inference_manager",
+      "to": "src.speaker.segmenter",
+      "type": "local_import"
+    },
+    {
+      "from": "src.speaker.inference_manager",
+      "to": "src.speaker.text_normalizer",
+      "type": "local_import"
+    },
+    {
+      "from": "src.speaker.retry_corrector",
+      "to": "src.asr.transcriber",
+      "type": "local_import"
+    },
+    {
+      "from": "src.speaker.retry_corrector",
+      "to": "src.lexicon.manager",
+      "type": "local_import"
+    },
+    {
+      "from": "src.speaker.retry_corrector",
+      "to": "src.speaker.inference_manager",
+      "type": "local_import"
+    },
+    {
+      "from": "src.speaker.retry_corrector",
+      "to": "src.speaker.text_normalizer",
+      "type": "local_import"
+    },
+    {
+      "from": "src.speaker.text_normalizer",
+      "to": "src.lexicon.manager",
+      "type": "local_import"
+    }
+  ]
+}

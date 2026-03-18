@@ -1,0 +1,109 @@
+{
+  "summary": {
+    "total": 20,
+    "keep": 20,
+    "review": 0
+  },
+  "decisions": [
+    {
+      "path": "api/v1/routes.py",
+      "decision": "keep",
+      "reason": "core_runtime"
+    },
+    {
+      "path": "api/v1/schemas.py",
+      "decision": "keep",
+      "reason": "core_runtime"
+    },
+    {
+      "path": "app.py",
+      "decision": "keep",
+      "reason": "core_runtime"
+    },
+    {
+      "path": "core/config.py",
+      "decision": "keep",
+      "reason": "core_runtime"
+    },
+    {
+      "path": "core/echo_renderer.py",
+      "decision": "keep",
+      "reason": "core_runtime"
+    },
+    {
+      "path": "core/logger.py",
+      "decision": "keep",
+      "reason": "core_runtime"
+    },
+    {
+      "path": "core/pipeline.py",
+      "decision": "keep",
+      "reason": "core_runtime"
+    },
+    {
+      "path": "core/session_manager.py",
+      "decision": "keep",
+      "reason": "core_runtime"
+    },
+    {
+      "path": "core/voice_registry.py",
+      "decision": "keep",
+      "reason": "core_runtime"
+    },
+    {
+      "path": "services/worker_tasks.py",
+      "decision": "keep",
+      "reason": "core_runtime"
+    },
+    {
+      "path": "src/asr/comparator.py",
+      "decision": "keep",
+      "reason": "active_or_in_progress"
+    },
+    {
+      "path": "src/asr/transcriber.py",
+      "decision": "keep",
+      "reason": "active_or_in_progress"
+    },
+    {
+      "path": "src/brain/architecture_guard.py",
+      "decision": "keep",
+      "reason": "active_or_in_progress"
+    },
+    {
+      "path": "src/brain/auto_cleanup.py",
+      "decision": "keep",
+      "reason": "active_or_in_progress"
+    },
+    {
+      "path": "src/brain/cleanup_advisor.py",
+      "decision": "keep",
+      "reason": "active_or_in_progress"
+    },
+    {
+      "path": "src/brain/dependency_mapper.py",
+      "decision": "keep",
+      "reason": "active_or_in_progress"
+    },
+    {
+      "path": "src/brain/project_analyzer.py",
+      "decision": "keep",
+      "reason": "active_or_in_progress"
+    },
+    {
+      "path": "src/brain/restructure_planner.py",
+      "decision": "keep",
+      "reason": "active_or_in_progress"
+    },
+    {
+      "path": "src/memory/project_memory.py",
+      "decision": "keep",
+      "reason": "active_or_in_progress"
+    },
+    {
+      "path": "src/speaker/text_normalizer.py",
+      "decision": "keep",
+      "reason": "active_or_in_progress"
+    }
+  ]
+}

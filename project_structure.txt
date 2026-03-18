@@ -1,0 +1,120 @@
+.
+├── README.md
+├── __pycache__
+│   └── app.cpython-311.pyc
+├── _archive
+│   └── src
+│       ├── cinematic
+│       │   └── processor.py
+│       ├── learning
+│       │   ├── dictionary_store.py
+│       │   └── feedback_loop.py
+│       └── speaker
+│           └── inference_manager.py
+├── api
+│   └── v1
+│       ├── __pycache__
+│       │   ├── routes.cpython-311.pyc
+│       │   └── schemas.cpython-311.pyc
+│       ├── routes.py
+│       └── schemas.py
+├── app.py
+├── assets
+│   ├── bgm
+│   │   └── echowave.mp3
+│   └── cinematic
+│       ├── closing
+│       │   └── closing_1.mp3
+│       ├── intro
+│       │   └── intro_1.mp3
+│       ├── reflection
+│       │   └── reflection_1.mp3
+│       ├── risers
+│       │   └── riser_1.mp3
+│       ├── story
+│       │   └── story_1.mp3
+│       ├── tech
+│       │   └── tech_1.mp3
+│       ├── transitions
+│       │   └── transition_1.mp3
+│       └── warning
+│           └── warning_1.mp3
+├── config
+├── core
+│   ├── __pycache__
+│   │   ├── audio_merger.cpython-311.pyc
+│   │   └── voice_registry.cpython-311.pyc
+│   ├── audio_merger.py
+│   ├── config.py
+│   ├── echo_renderer.py
+│   ├── logger.py
+│   ├── pipeline.py
+│   ├── session_manager.py
+│   └── voice_registry.py
+├── data
+│   ├── brain
+│   │   ├── architecture_report.json
+│   │   ├── cleanup_advisor_report.json
+│   │   ├── cleanup_candidates.json
+│   │   ├── dependency_map.json
+│   │   ├── issues_detected.json
+│   │   ├── project_graph.json
+│   │   └── restructure_plan.json
+│   ├── learning
+│   │   ├── corrections_log.jsonl
+│   │   └── review_queue.json
+│   ├── lexicon
+│   │   ├── custom_dictionary.json
+│   │   └── pronunciation_lexicon.json
+│   ├── outputs
+│   ├── ref
+│   │   ├── salem_base.wav
+│   │   └── salem_podcast_clean.wav
+│   └── texts
+├── project_structure.txt
+├── requirements.txt
+├── run_env.sh
+├── services
+│   └── worker_tasks.py
+├── src
+│   ├── asr
+│   │   ├── __pycache__
+│   │   │   └── transcriber.cpython-311.pyc
+│   │   ├── comparator.py
+│   │   └── transcriber.py
+│   ├── brain
+│   │   ├── architecture_guard.py
+│   │   ├── auto_cleanup.py
+│   │   ├── cleanup_advisor.py
+│   │   ├── dependency_mapper.py
+│   │   ├── project_analyzer.py
+│   │   └── restructure_planner.py
+│   ├── cinematic
+│   ├── learning
+│   ├── memory
+│   │   └── project_memory.py
+│   ├── speaker
+│   │   ├── __pycache__
+│   │   │   ├── inference_manager.cpython-311.pyc
+│   │   │   ├── pronunciation_ai.cpython-311.pyc
+│   │   │   ├── retry_corrector.cpython-311.pyc
+│   │   │   ├── segmenter.cpython-311.pyc
+│   │   │   └── text_normalizer.cpython-311.pyc
+│   │   ├── inference_manager.py
+│   │   ├── pronunciation_ai.py
+│   │   ├── retry_corrector.py
+│   │   ├── segmenter.py
+│   │   └── text_normalizer.py
+│   └── utils
+├── static
+│   ├── script.js
+│   └── style.css
+├── storage
+│   ├── logs
+│   ├── sessions
+│   └── tmp
+├── templates
+│   └── index.html
+└── tests
+
+49 directories, 69 files

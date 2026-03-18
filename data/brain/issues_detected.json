@@ -1,0 +1,12 @@
+{
+  "parse_errors": [],
+  "empty_modules": [
+    "core/config.py",
+    "core/echo_renderer.py",
+    "core/logger.py",
+    "core/pipeline.py",
+    "core/session_manager.py",
+    "services/worker_tasks.py"
+  ],
+  "suspicious_modules": []
+}

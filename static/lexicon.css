@@ -1,0 +1,483 @@
+:root {
+    --bg-main: #050d1e;
+    --panel: rgba(10, 20, 45, 0.8);
+    --line: rgba(255, 255, 255, 0.08);
+    --text-main: #eef2ff;
+    --text-soft: #93a4c8;
+    --accent: #8b5cf6;
+    --accent-2: #6d28d9;
+    --success: #34d399;
+    --danger: #f87171;
+    --radius-xl: 24px;
+    --radius-lg: 18px;
+    --radius-md: 12px;
+    --font-main: "Tajawal", sans-serif;
+    --shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body {
+    min-height: 100vh;
+    font-family: var(--font-main);
+    background: linear-gradient(160deg, #030a18 0%, #0a1530 40%, #0d0f2a 70%, #060e20 100%);
+    color: var(--text-main);
+}
+
+body {
+    direction: rtl;
+}
+
+button,
+input,
+select,
+textarea {
+    font-family: var(--font-main);
+}
+
+.lexicon-body {
+    position: relative;
+    overflow-x: hidden;
+}
+
+.bg-layer {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.glow {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(100px);
+}
+
+.glow-1 {
+    width: 420px;
+    height: 420px;
+    right: 4%;
+    top: -40px;
+    background: rgba(139, 92, 246, 0.22);
+}
+
+.glow-2 {
+    width: 360px;
+    height: 360px;
+    left: 3%;
+    bottom: 0;
+    background: rgba(34, 211, 238, 0.14);
+}
+
+.lexicon-shell {
+    position: relative;
+    z-index: 1;
+    width: min(1400px, calc(100% - 40px));
+    margin: 28px auto;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+}
+
+.glass-panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+    box-shadow: var(--shadow);
+    border-radius: var(--radius-xl);
+}
+
+.hero-card,
+.card {
+    padding: 24px;
+}
+
+.hero-badge {
+    display: inline-block;
+    padding: 7px 14px;
+    border-radius: 999px;
+    background: rgba(139, 92, 246, 0.12);
+    border: 1px solid rgba(139, 92, 246, 0.25);
+    color: #c4b5fd;
+    font-size: 12px;
+    margin-bottom: 14px;
+}
+
+.hero-card h1 {
+    font-size: 40px;
+    font-weight: 800;
+    margin-bottom: 10px;
+    background: linear-gradient(135deg, #c4b5fd 0%, #a78bfa 35%, #7c3aed 70%, #22d3ee 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.hero-card p {
+    color: var(--text-soft);
+    line-height: 1.9;
+    font-size: 16px;
+}
+
+.lexicon-grid {
+    display: grid;
+    grid-template-columns: 1.3fr 0.8fr;
+    gap: 22px;
+}
+
+.section-head {
+    margin-bottom: 18px;
+}
+
+.section-head h2 {
+    font-size: 22px;
+    margin-bottom: 6px;
+}
+
+.section-head p {
+    color: var(--text-soft);
+    font-size: 14px;
+    line-height: 1.8;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 220px;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.field label {
+    font-size: 13px;
+    color: var(--text-soft);
+}
+
+.field input,
+.field select {
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-main);
+    border-radius: var(--radius-md);
+    padding: 13px 14px;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.field input::placeholder {
+    color: rgba(238, 242, 255, 0.38);
+}
+
+.field input:focus,
+.field select:focus {
+    border-color: rgba(139, 92, 246, 0.45);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.field input[readonly] {
+    opacity: 0.88;
+    cursor: not-allowed;
+}
+
+.action-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.primary-btn,
+.secondary-btn,
+.danger-btn {
+    border: 0;
+    cursor: pointer;
+    border-radius: var(--radius-md);
+    min-height: 46px;
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 700;
+    transition: transform 0.16s ease, opacity 0.16s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+.primary-btn:hover,
+.secondary-btn:hover,
+.danger-btn:hover {
+    transform: translateY(-1px);
+}
+
+.primary-btn:active,
+.secondary-btn:active,
+.danger-btn:active {
+    transform: translateY(0);
+}
+
+.primary-btn {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: white;
+}
+
+.secondary-btn {
+    background: rgba(255, 255, 255, 0.06);
+    color: white;
+    border: 1px solid var(--line);
+}
+
+.secondary-btn:hover {
+    background: rgba(255, 255, 255, 0.09);
+}
+
+.danger-btn {
+    background: rgba(248, 113, 113, 0.12);
+    color: #fecaca;
+    border: 1px solid rgba(248, 113, 113, 0.2);
+}
+
+.danger-btn:hover {
+    background: rgba(248, 113, 113, 0.18);
+}
+
+.full-player {
+    width: 100%;
+    margin-top: 14px;
+    height: 48px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.form-message {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+}
+
+.form-message.success {
+    background: rgba(52, 211, 153, 0.1);
+    border: 1px solid rgba(52, 211, 153, 0.2);
+    color: #bbf7d0;
+}
+
+.form-message.error {
+    background: rgba(248, 113, 113, 0.1);
+    border: 1px solid rgba(248, 113, 113, 0.2);
+    color: #fecaca;
+}
+
+.stats-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.stat-box {
+    padding: 16px;
+    border-radius: var(--radius-lg);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--line);
+    text-align: center;
+}
+
+.stat-box span {
+    display: block;
+    color: var(--text-soft);
+    font-size: 13px;
+    margin-bottom: 8px;
+}
+
+.stat-box strong {
+    font-size: 24px;
+    font-weight: 800;
+}
+
+.lexicon-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+}
+
+.lexicon-group {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.lexicon-group-header {
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.lexicon-group-header h3 {
+    font-size: 18px;
+}
+
+.lexicon-items {
+    display: flex;
+    flex-direction: column;
+}
+
+.lexicon-item {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 14px;
+    align-items: center;
+    padding: 16px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.lexicon-item:last-child {
+    border-bottom: 0;
+}
+
+.word-box {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+}
+
+.word-box span {
+    color: var(--text-soft);
+    font-size: 12px;
+}
+
+.word-box strong {
+    font-size: 16px;
+    line-height: 1.7;
+    word-break: break-word;
+}
+
+.item-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+}
+
+.empty-state {
+    padding: 24px;
+    text-align: center;
+    color: var(--text-soft);
+}
+
+/* Modal */
+.modal {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.modal.hidden {
+    display: none !important;
+}
+
+.modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(2, 8, 20, 0.7);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+.modal-card {
+    position: relative;
+    z-index: 1;
+    width: min(760px, 100%);
+    padding: 24px;
+    border-radius: var(--radius-xl);
+}
+
+.modal-card .form-grid {
+    grid-template-columns: 1fr 1fr 220px;
+    margin-bottom: 8px;
+}
+
+.modal-card .action-row {
+    margin-top: 16px;
+}
+
+.modal-card .full-player {
+    margin-top: 10px;
+}
+
+@media (max-width: 980px) {
+    .lexicon-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .lexicon-item {
+        grid-template-columns: 1fr;
+    }
+
+    .item-actions {
+        width: 100%;
+    }
+
+    .item-actions button {
+        flex: 1 1 140px;
+    }
+
+    .modal {
+        padding: 16px;
+    }
+
+    .modal-card .form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .lexicon-shell {
+        width: min(100% - 20px, 1400px);
+        margin: 18px auto;
+        gap: 16px;
+    }
+
+    .hero-card,
+    .card,
+    .modal-card {
+        padding: 18px;
+    }
+
+    .hero-card h1 {
+        font-size: 30px;
+    }
+
+    .stats-row {
+        grid-template-columns: 1fr;
+    }
+
+    .action-row {
+        flex-direction: column;
+    }
+
+    .action-row button {
+        width: 100%;
+    }
+
+    .lexicon-item {
+        padding: 14px;
+    }
+}

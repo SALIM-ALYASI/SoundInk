@@ -1,0 +1,600 @@
+{
+  "project_root": "/Volumes/MyProjects/AI/APVA",
+  "modules": [
+    {
+      "path": "api/v1/routes.py",
+      "module": "api.v1.routes",
+      "functions": [
+        "add_lexicon_word",
+        "approve_lexicon_suggestion",
+        "brain_summary",
+        "delete_file_later",
+        "delete_files_later",
+        "delete_lexicon_word",
+        "edit_lexicon_suggestion",
+        "find_bgm_file",
+        "get_lexicon",
+        "get_lexicon_suggestions",
+        "health",
+        "is_skip_marker",
+        "load_lexicon",
+        "normalize_marker_text",
+        "normalize_text_for_tts",
+        "podcast",
+        "preview_pronunciation",
+        "read_json_file",
+        "reject_lexicon_suggestion",
+        "safe_filename",
+        "save_lexicon",
+        "segments_preview",
+        "speak",
+        "strip_arabic_diacritics",
+        "update_lexicon_word",
+        "voices"
+      ],
+      "classes": [
+        "SuggestionActionRequest",
+        "SuggestionEditRequest"
+      ],
+      "lines": 614,
+      "local_imports": [
+        "api.v1.schemas",
+        "core.audio_merger",
+        "core.voice_registry",
+        "src.lexicon.manager",
+        "src.podcast.podcast_engine",
+        "src.speaker.inference_manager",
+        "src.speaker.retry_corrector",
+        "src.speaker.segmenter",
+        "src.speaker.text_normalizer"
+      ],
+      "external_imports": [
+        "__future__",
+        "fastapi",
+        "fastapi.responses",
+        "json",
+        "os",
+        "pathlib",
+        "pydantic",
+        "pydub",
+        "re",
+        "typing"
+      ],
+      "errors": []
+    },
+    {
+      "path": "api/v1/schemas.py",
+      "module": "api.v1.schemas",
+      "functions": [],
+      "classes": [
+        "PodcastRequest",
+        "SegmentRequest",
+        "SpeakRequest"
+      ],
+      "lines": 106,
+      "local_imports": [],
+      "external_imports": [
+        "pydantic",
+        "typing"
+      ],
+      "errors": []
+    },
+    {
+      "path": "app.py",
+      "module": "app",
+      "functions": [
+        "home"
+      ],
+      "classes": [],
+      "lines": 18,
+      "local_imports": [
+        "api.v1.routes"
+      ],
+      "external_imports": [
+        "fastapi",
+        "fastapi.responses",
+        "fastapi.staticfiles",
+        "fastapi.templating"
+      ],
+      "errors": []
+    },
+    {
+      "path": "core/audio_merger.py",
+      "module": "core.audio_merger",
+      "functions": [
+        "_export_temp_wav",
+        "_load_audio",
+        "_loop_to_duration",
+        "_match_audio_profile",
+        "_safe_dbfs",
+        "_validate_audio_file",
+        "merge_wav_files",
+        "mix_voice_with_bgm",
+        "mix_voice_with_bgm_ducking"
+      ],
+      "classes": [
+        "AudioChunk"
+      ],
+      "lines": 201,
+      "local_imports": [],
+      "external_imports": [
+        "__future__",
+        "math",
+        "pathlib",
+        "pydub",
+        "tempfile",
+        "typing"
+      ],
+      "errors": []
+    },
+    {
+      "path": "core/config.py",
+      "module": "core.config",
+      "functions": [],
+      "classes": [],
+      "lines": 0,
+      "local_imports": [],
+      "external_imports": [],
+      "errors": []
+    },
+    {
+      "path": "core/echo_renderer.py",
+      "module": "core.echo_renderer",
+      "functions": [],
+      "classes": [],
+      "lines": 0,
+      "local_imports": [],
+      "external_imports": [],
+      "errors": []
+    },
+    {
+      "path": "core/logger.py",
+      "module": "core.logger",
+      "functions": [],
+      "classes": [],
+      "lines": 0,
+      "local_imports": [],
+      "external_imports": [],
+      "errors": []
+    },
+    {
+      "path": "core/pipeline.py",
+      "module": "core.pipeline",
+      "functions": [],
+      "classes": [],
+      "lines": 0,
+      "local_imports": [],
+      "external_imports": [],
+      "errors": []
+    },
+    {
+      "path": "core/session_manager.py",
+      "module": "core.session_manager",
+      "functions": [],
+      "classes": [],
+      "lines": 0,
+      "local_imports": [],
+      "external_imports": [],
+      "errors": []
+    },
+    {
+      "path": "core/voice_registry.py",
+      "module": "core.voice_registry",
+      "functions": [
+        "get_voice",
+        "list_voices"
+      ],
+      "classes": [],
+      "lines": 59,
+      "local_imports": [],
+      "external_imports": [
+        "__future__",
+        "pathlib"
+      ],
+      "errors": []
+    },
+    {
+      "path": "services/worker_tasks.py",
+      "module": "services.worker_tasks",
+      "functions": [],
+      "classes": [],
+      "lines": 0,
+      "local_imports": [],
+      "external_imports": [],
+      "errors": []
+    },
+    {
+      "path": "src/asr/comparator.py",
+      "module": "src.asr.comparator",
+      "functions": [
+        "compare_texts"
+      ],
+      "classes": [],
+      "lines": 22,
+      "local_imports": [],
+      "external_imports": [],
+      "errors": []
+    },
+    {
+      "path": "src/asr/transcriber.py",
+      "module": "src.asr.transcriber",
+      "functions": [
+        "get_whisper_model",
+        "transcribe_audio"
+      ],
+      "classes": [],
+      "lines": 59,
+      "local_imports": [],
+      "external_imports": [
+        "__future__",
+        "functools",
+        "pathlib",
+        "whisper"
+      ],
+      "errors": []
+    },
+    {
+      "path": "src/brain/architecture_guard.py",
+      "module": "src.brain.architecture_guard",
+      "functions": [
+        "detect_layer",
+        "import_layer",
+        "load_json",
+        "main"
+      ],
+      "classes": [],
+      "lines": 95,
+      "local_imports": [],
+      "external_imports": [
+        "__future__",
+        "json",
+        "pathlib"
+      ],
+      "errors": []
+    },
+    {
+      "path": "src/brain/auto_cleanup.py",
+      "module": "src.brain.auto_cleanup",
+      "functions": [
+        "archive_file",
+        "load_cleanup",
+        "main"
+      ],
+      "classes": [],
+      "lines": 53,
+      "local_imports": [],
+      "external_imports": [
+        "json",
+        "pathlib",
+        "shutil"
+      ],
+      "errors": []
+    },
+    {
+      "path": "src/brain/cleanup_advisor.py",
+      "module": "src.brain.cleanup_advisor",
+      "functions": [
+        "classify_module",
+        "load_json",
+        "main"
+      ],
+      "classes": [],
+      "lines": 66,
+      "local_imports": [],
+      "external_imports": [
+        "__future__",
+        "json",
+        "pathlib"
+      ],
+      "errors": []
+    },
+    {
+      "path": "src/brain/dependency_mapper.py",
+      "module": "src.brain.dependency_mapper",
+      "functions": [
+        "build_dependency_map",
+        "load_json",
+        "main"
+      ],
+      "classes": [],
+      "lines": 56,
+      "local_imports": [],
+      "external_imports": [
+        "__future__",
+        "json",
+        "pathlib"
+      ],
+      "errors": []
+    },
+    {
+      "path": "src/brain/project_analyzer.py",
+      "module": "src.brain.project_analyzer",
+      "functions": [
+        "analyze_python_file",
+        "build_cleanup_candidates",
+        "build_graph",
+        "collect_python_files",
+        "detect_issues",
+        "main",
+        "module_name_from_path",
+        "should_skip",
+        "write_json"
+      ],
+      "classes": [],
+      "lines": 224,
+      "local_imports": [],
+      "external_imports": [
+        "__future__",
+        "ast",
+        "json",
+        "pathlib"
+      ],
+      "errors": []
+    },
+    {
+      "path": "src/brain/restructure_planner.py",
+      "module": "src.brain.restructure_planner",
+      "functions": [
+        "load_json",
+        "main",
+        "suggest_target"
+      ],
+      "classes": [],
+      "lines": 82,
+      "local_imports": [],
+      "external_imports": [
+        "__future__",
+        "json",
+        "pathlib"
+      ],
+      "errors": []
+    },
+    {
+      "path": "src/lexicon/manager.py",
+      "module": "src.lexicon.manager",
+      "functions": [
+        "add_lexicon_entry",
+        "approve_suggestion",
+        "calc_text_similarity",
+        "clean_suggestion_text",
+        "clean_text",
+        "clean_text_field",
+        "create_suggestion",
+        "ensure_storage",
+        "find_duplicate_suggestion",
+        "get_suggestion",
+        "grouped_suggestions",
+        "is_low_quality_suggestion",
+        "load_json",
+        "load_lexicon",
+        "load_suggestions",
+        "mark_suggestion_needs_edit",
+        "normalize_category",
+        "normalize_compare_text",
+        "reject_suggestion",
+        "remove_diacritics",
+        "save_json",
+        "save_lexicon",
+        "save_suggestions",
+        "smart_create_suggestion",
+        "update_suggestion",
+        "utc_now_iso",
+        "word_count"
+      ],
+      "classes": [],
+      "lines": 520,
+      "local_imports": [],
+      "external_imports": [
+        "__future__",
+        "datetime",
+        "difflib",
+        "json",
+        "pathlib",
+        "re",
+        "typing",
+        "uuid"
+      ],
+      "errors": []
+    },
+    {
+      "path": "src/memory/project_memory.py",
+      "module": "src.memory.project_memory",
+      "functions": [
+        "add_decision",
+        "add_issue",
+        "add_note",
+        "load_memory",
+        "save_memory"
+      ],
+      "classes": [],
+      "lines": 57,
+      "local_imports": [],
+      "external_imports": [
+        "__future__",
+        "datetime",
+        "json",
+        "pathlib"
+      ],
+      "errors": []
+    },
+    {
+      "path": "src/podcast/emotion_engine.py",
+      "module": "src.podcast.emotion_engine",
+      "functions": [
+        "apply_emotion",
+        "detect_emotion"
+      ],
+      "classes": [],
+      "lines": 78,
+      "local_imports": [],
+      "external_imports": [
+        "__future__",
+        "re"
+      ],
+      "errors": []
+    },
+    {
+      "path": "src/podcast/podcast_engine.py",
+      "module": "src.podcast.podcast_engine",
+      "functions": [
+        "build_podcast_segments",
+        "detect_section_type",
+        "normalize_text",
+        "split_text_blocks"
+      ],
+      "classes": [],
+      "lines": 74,
+      "local_imports": [
+        "src.podcast.emotion_engine"
+      ],
+      "external_imports": [
+        "__future__",
+        "re",
+        "typing"
+      ],
+      "errors": []
+    },
+    {
+      "path": "src/speaker/inference_manager.py",
+      "module": "src.speaker.inference_manager",
+      "functions": [
+        "__init__",
+        "_create_temp_output_path",
+        "_load_model",
+        "generate_temp_audio",
+        "generate_temp_segments"
+      ],
+      "classes": [
+        "InferenceManager"
+      ],
+      "lines": 104,
+      "local_imports": [
+        "core.voice_registry",
+        "src.speaker.segmenter",
+        "src.speaker.text_normalizer"
+      ],
+      "external_imports": [
+        "TTS.api",
+        "__future__",
+        "pathlib",
+        "tempfile",
+        "typing"
+      ],
+      "errors": []
+    },
+    {
+      "path": "src/speaker/pronunciation_ai.py",
+      "module": "src.speaker.pronunciation_ai",
+      "functions": [
+        "build_pronunciation_prompt",
+        "improve_pronunciation_or_fallback",
+        "improve_pronunciation_text",
+        "ollama_is_available"
+      ],
+      "classes": [
+        "PronunciationAIResult"
+      ],
+      "lines": 147,
+      "local_imports": [],
+      "external_imports": [
+        "__future__",
+        "dataclasses",
+        "subprocess",
+        "typing"
+      ],
+      "errors": []
+    },
+    {
+      "path": "src/speaker/retry_corrector.py",
+      "module": "src.speaker.retry_corrector",
+      "functions": [
+        "build_retry_text",
+        "calc_similarity",
+        "generate_and_validate_segment",
+        "learn_from_asr",
+        "log_retry_feedback",
+        "should_create_suggestion",
+        "try_create_suggestion",
+        "utc_now_iso",
+        "word_count"
+      ],
+      "classes": [
+        "RetryResult"
+      ],
+      "lines": 337,
+      "local_imports": [
+        "src.asr.transcriber",
+        "src.lexicon.manager",
+        "src.speaker.inference_manager",
+        "src.speaker.text_normalizer"
+      ],
+      "external_imports": [
+        "__future__",
+        "dataclasses",
+        "datetime",
+        "difflib",
+        "json",
+        "pathlib"
+      ],
+      "errors": []
+    },
+    {
+      "path": "src/speaker/segmenter.py",
+      "module": "src.speaker.segmenter",
+      "functions": [
+        "force_split_long_text",
+        "split_paragraph_into_sentences",
+        "split_text_into_segments",
+        "split_text_into_segments_with_breaks"
+      ],
+      "classes": [
+        "TextSegment"
+      ],
+      "lines": 100,
+      "local_imports": [],
+      "external_imports": [
+        "__future__",
+        "re",
+        "typing"
+      ],
+      "errors": []
+    },
+    {
+      "path": "src/speaker/text_normalizer.py",
+      "module": "src.speaker.text_normalizer",
+      "functions": [
+        "_compiled_pattern",
+        "_safe_pattern_for_phrase",
+        "apply_adaptive_pronunciation",
+        "apply_context_pronunciation",
+        "apply_pronunciation_lexicon",
+        "auto_learn_lexicon",
+        "build_replacement_pairs",
+        "context_aware_pronunciation",
+        "detect_context",
+        "extract_unknown_words",
+        "get_best_suggestion",
+        "is_in_lexicon",
+        "load_lexicon",
+        "normalize_punctuation_spacing",
+        "prepare_tts_text",
+        "remove_extra_spaces",
+        "smart_phonetic_en_to_ar",
+        "strip_diacritics"
+      ],
+      "classes": [],
+      "lines": 286,
+      "local_imports": [
+        "src.lexicon.manager"
+      ],
+      "external_imports": [
+        "__future__",
+        "functools",
+        "json",
+        "pathlib",
+        "re"
+      ],
+      "errors": []
+    }
+  ]
+}

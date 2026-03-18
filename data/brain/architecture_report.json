@@ -1,0 +1,139 @@
+{
+  "summary": {
+    "total_modules": 28,
+    "violations": 15
+  },
+  "rules": {
+    "app": {
+      "can_import": [
+        "api",
+        "core"
+      ]
+    },
+    "api": {
+      "can_import": [
+        "core"
+      ]
+    },
+    "core": {
+      "can_import": []
+    },
+    "services": {
+      "can_import": [
+        "core"
+      ]
+    },
+    "src": {
+      "can_import": [
+        "core"
+      ]
+    }
+  },
+  "violations": [
+    {
+      "path": "api/v1/routes.py",
+      "module_layer": "api",
+      "import": "api.v1.schemas",
+      "import_layer": "api",
+      "reason": "layer_violation"
+    },
+    {
+      "path": "api/v1/routes.py",
+      "module_layer": "api",
+      "import": "src.lexicon.manager",
+      "import_layer": "src",
+      "reason": "layer_violation"
+    },
+    {
+      "path": "api/v1/routes.py",
+      "module_layer": "api",
+      "import": "src.podcast.podcast_engine",
+      "import_layer": "src",
+      "reason": "layer_violation"
+    },
+    {
+      "path": "api/v1/routes.py",
+      "module_layer": "api",
+      "import": "src.speaker.inference_manager",
+      "import_layer": "src",
+      "reason": "layer_violation"
+    },
+    {
+      "path": "api/v1/routes.py",
+      "module_layer": "api",
+      "import": "src.speaker.retry_corrector",
+      "import_layer": "src",
+      "reason": "layer_violation"
+    },
+    {
+      "path": "api/v1/routes.py",
+      "module_layer": "api",
+      "import": "src.speaker.segmenter",
+      "import_layer": "src",
+      "reason": "layer_violation"
+    },
+    {
+      "path": "api/v1/routes.py",
+      "module_layer": "api",
+      "import": "src.speaker.text_normalizer",
+      "import_layer": "src",
+      "reason": "layer_violation"
+    },
+    {
+      "path": "src/podcast/podcast_engine.py",
+      "module_layer": "src",
+      "import": "src.podcast.emotion_engine",
+      "import_layer": "src",
+      "reason": "layer_violation"
+    },
+    {
+      "path": "src/speaker/inference_manager.py",
+      "module_layer": "src",
+      "import": "src.speaker.segmenter",
+      "import_layer": "src",
+      "reason": "layer_violation"
+    },
+    {
+      "path": "src/speaker/inference_manager.py",
+      "module_layer": "src",
+      "import": "src.speaker.text_normalizer",
+      "import_layer": "src",
+      "reason": "layer_violation"
+    },
+    {
+      "path": "src/speaker/retry_corrector.py",
+      "module_layer": "src",
+      "import": "src.asr.transcriber",
+      "import_layer": "src",
+      "reason": "layer_violation"
+    },
+    {
+      "path": "src/speaker/retry_corrector.py",
+      "module_layer": "src",
+      "import": "src.lexicon.manager",
+      "import_layer": "src",
+      "reason": "layer_violation"
+    },
+    {
+      "path": "src/speaker/retry_corrector.py",
+      "module_layer": "src",
+      "import": "src.speaker.inference_manager",
+      "import_layer": "src",
+      "reason": "layer_violation"
+    },
+    {
+      "path": "src/speaker/retry_corrector.py",
+      "module_layer": "src",
+      "import": "src.speaker.text_normalizer",
+      "import_layer": "src",
+      "reason": "layer_violation"
+    },
+    {
+      "path": "src/speaker/text_normalizer.py",
+      "module_layer": "src",
+      "import": "src.lexicon.manager",
+      "import_layer": "src",
+      "reason": "layer_violation"
+    }
+  ]
+}

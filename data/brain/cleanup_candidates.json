@@ -1,0 +1,33 @@
+{
+  "review": [],
+  "keep": [
+    "api/v1/routes.py",
+    "api/v1/schemas.py",
+    "app.py",
+    "core/audio_merger.py",
+    "core/config.py",
+    "core/echo_renderer.py",
+    "core/logger.py",
+    "core/pipeline.py",
+    "core/session_manager.py",
+    "core/voice_registry.py",
+    "services/worker_tasks.py",
+    "src/asr/comparator.py",
+    "src/asr/transcriber.py",
+    "src/brain/architecture_guard.py",
+    "src/brain/auto_cleanup.py",
+    "src/brain/cleanup_advisor.py",
+    "src/brain/dependency_mapper.py",
+    "src/brain/project_analyzer.py",
+    "src/brain/restructure_planner.py",
+    "src/lexicon/manager.py",
+    "src/memory/project_memory.py",
+    "src/podcast/emotion_engine.py",
+    "src/podcast/podcast_engine.py",
+    "src/speaker/inference_manager.py",
+    "src/speaker/pronunciation_ai.py",
+    "src/speaker/retry_corrector.py",
+    "src/speaker/segmenter.py",
+    "src/speaker/text_normalizer.py"
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "summary": {
+    "moves": 7,
+    "keep": 21
+  },
+  "moves": [
+    {
+      "path": "src/asr/comparator.py",
+      "suggested_target_dir": "src/asr/",
+      "reason": "structure_alignment"
+    },
+    {
+      "path": "src/asr/transcriber.py",
+      "suggested_target_dir": "src/asr/",
+      "reason": "structure_alignment"
+    },
+    {
+      "path": "src/brain/cleanup_advisor.py",
+      "suggested_target_dir": "src/brain/",
+      "reason": "structure_alignment"
+    },
+    {
+      "path": "src/brain/dependency_mapper.py",
+      "suggested_target_dir": "src/brain/",
+      "reason": "structure_alignment"
+    },
+    {
+      "path": "src/brain/project_analyzer.py",
+      "suggested_target_dir": "src/brain/",
+      "reason": "structure_alignment"
+    },
+    {
+      "path": "src/memory/project_memory.py",
+      "suggested_target_dir": "src/memory/",
+      "reason": "structure_alignment"
+    },
+    {
+      "path": "src/speaker/text_normalizer.py",
+      "suggested_target_dir": "src/speaker/",
+      "reason": "structure_alignment"
+    }
+  ],
+  "keep": [
+    "api/v1/routes.py",
+    "api/v1/schemas.py",
+    "app.py",
+    "core/audio_merger.py",
+    "core/config.py",
+    "core/echo_renderer.py",
+    "core/logger.py",
+    "core/pipeline.py",
+    "core/session_manager.py",
+    "core/voice_registry.py",
+    "services/worker_tasks.py",
+    "src/brain/architecture_guard.py",
+    "src/brain/auto_cleanup.py",
+    "src/brain/restructure_planner.py",
+    "src/lexicon/manager.py",
+    "src/podcast/emotion_engine.py",
+    "src/podcast/podcast_engine.py",
+    "src/speaker/inference_manager.py",
+    "src/speaker/pronunciation_ai.py",
+    "src/speaker/retry_corrector.py",
+    "src/speaker/segmenter.py"
+  ]
+}

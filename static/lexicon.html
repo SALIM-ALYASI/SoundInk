@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>APVA Lexicon Studio</title>
+
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="/static/lexicon.css?v=3" />
+</head>
+<body class="lexicon-body">
+
+    <div class="bg-layer">
+        <div class="glow glow-1"></div>
+        <div class="glow glow-2"></div>
+    </div>
+
+    <main class="lexicon-shell">
+        <header class="hero-card glass-panel">
+            <div>
+                <div class="hero-badge">APVA NEXT • LEXICON STUDIO</div>
+                <h1>استوديو القاموس الصوتي</h1>
+                <p>
+                    أدر كلمات النطق يدويًا، استمع لها قبل الحفظ، وحدث القاموس بسهولة.
+                </p>
+            </div>
+        </header>
+
+        <section class="lexicon-grid">
+
+            <section class="glass-panel card add-card">
+                <div class="section-head">
+                    <div>
+                        <h2>إضافة كلمة</h2>
+                        <p>أضف كلمة جديدة مع النطق المحسن والتصنيف المناسب.</p>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="field">
+                        <label for="original-input">الكلمة الأصلية</label>
+                        <input id="original-input" type="text" placeholder="مثال: رسيس" />
+                    </div>
+
+                    <div class="field">
+                        <label for="formatted-input">النطق المحسن</label>
+                        <input id="formatted-input" type="text" placeholder="مثال: رَسِيس" />
+                    </div>
+
+                    <div class="field">
+                        <label for="category-select">التصنيف</label>
+                        <select id="category-select">
+                            <option value="misc_pronunciation">كلمات عامة</option>
+                            <option value="names_pronunciation">أسماء ومصطلحات</option>
+                            <option value="tribes_pronunciation">قبائل</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="action-row">
+                    <button id="preview-word-btn" class="secondary-btn" type="button">▶ تجربة النطق</button>
+                    <button id="add-word-btn" class="primary-btn" type="button">إضافة للقاموس</button>
+                </div>
+
+                <audio id="manual-preview-player" controls preload="none" class="full-player hidden"></audio>
+
+                <div id="form-message" class="form-message hidden"></div>
+            </section>
+
+            <section class="glass-panel card status-card">
+                <div class="section-head">
+                    <div>
+                        <h2>معلومات</h2>
+                        <p>حالة القاموس وعدد الكلمات الحالية.</p>
+                    </div>
+                </div>
+
+                <div class="stats-row">
+                    <div class="stat-box">
+                        <span>إجمالي الكلمات</span>
+                        <strong id="total-count">0</strong>
+                    </div>
+
+                    <div class="stat-box">
+                        <span>آخر تحديث</span>
+                        <strong id="last-refresh">—</strong>
+                    </div>
+                </div>
+
+                <div class="action-row">
+                    <button id="refresh-lexicon-btn" class="secondary-btn" type="button">تحديث القاموس</button>
+                </div>
+            </section>
+
+        </section>
+
+        <section class="glass-panel card">
+            <div class="section-head">
+                <div>
+                    <h2>القاموس الحالي</h2>
+                    <p>استعرض الكلمات الحالية، شغّل النطق، عدّلها، أو احذف ما لا تحتاجه.</p>
+                </div>
+            </div>
+
+            <div id="lexicon-sections" class="lexicon-sections"></div>
+        </section>
+    </main>
+
+    <!-- Edit Modal -->
+    <div id="edit-lexicon-modal" class="modal hidden" aria-hidden="true">
+        <div class="modal-backdrop" data-close-edit-modal="true"></div>
+
+        <div class="modal-card glass-panel" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title">
+            <div class="section-head">
+                <div>
+                    <h2 id="edit-modal-title">تعديل الكلمة</h2>
+                    <p>عدّل النطق المحسن ثم احفظ التغييرات.</p>
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <div class="field">
+                    <label for="edit-original-input">الكلمة الأصلية</label>
+                    <input id="edit-original-input" type="text" readonly />
+                </div>
+
+                <div class="field">
+                    <label for="edit-formatted-input">النطق المحسن</label>
+                    <input id="edit-formatted-input" type="text" placeholder="اكتب النطق المحسن" />
+                </div>
+
+                <div class="field">
+                    <label for="edit-category-input">التصنيف</label>
+                    <input id="edit-category-input" type="text" readonly />
+                </div>
+            </div>
+
+            <audio id="edit-preview-player" controls preload="none" class="full-player hidden"></audio>
+
+            <div id="edit-form-message" class="form-message hidden"></div>
+
+            <div class="action-row">
+                <button id="edit-preview-btn" class="secondary-btn" type="button">▶ تجربة بعد التعديل</button>
+                <button id="save-edit-btn" class="primary-btn" type="button">حفظ التعديل</button>
+                <button id="cancel-edit-btn" class="danger-btn" type="button">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/lexicon.js?v=3"></script>
+</body>
+</html>
