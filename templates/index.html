@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="/static/style.css" />
+    <link rel="stylesheet" href="/static/style.css?v=2" />
 </head>
 <body class="studio-body">
 
@@ -26,11 +26,10 @@
                 <div class="hero-badge">APVA NEXT • VOICE STUDIO</div>
                 <h1>استوديو الصوت الذكي</h1>
                 <p class="hero-subtitle">
-                    اكتب النص، اختر الصوت، وجرّب المعاينة السريعة أو التوليد الكامل مباشرة من المتصفح.
+                    أنشئ مقاطع صوتية متعددة، وعدّلها لاحقًا، ثم اختر المقاطع التي تريد دمجها في حلقة كاملة أو ملف موحد.
                 </p>
             </div>
-
-            <div class="header-tools">
+              <div class="header-tools">
                 <a href="/static/lexicon.html" class="secondary-btn lexicon-link-btn">
                     <span>فتح استوديو القاموس</span>
                     <span id="lexicon-alert-dot" class="alert-dot hidden" title="توجد كلمات تحتاج مراجعة"></span>
@@ -46,7 +45,7 @@
                     <div class="section-head">
                         <div>
                             <h2>النص</h2>
-                            <p>أدخل النص الذي تريد تحويله إلى صوت.</p>
+                            <p>أدخل نصًا بحد أقصى 2000 حرف لكل مقطع.</p>
                         </div>
 
                         <div class="counter-box">
@@ -58,46 +57,23 @@
                     <textarea
                         id="text-input"
                         class="main-textarea"
-                        placeholder="اكتب النص هنا... مثال: مرحبا بكم في بودكاست رسيس"
-                    >مرحبا بكم في بودكاست رسيس</textarea>
+                        maxlength="2000"
+                        placeholder="اكتب النص هنا..."
+                    ></textarea>
 
                     <div id="error-message" class="error-msg hidden"></div>
 
                     <div class="action-row">
-                        <button id="preview-btn" class="secondary-btn">معاينة سريعة</button>
-
                         <button id="generate-btn" class="primary-btn generate-btn">
-                            <span class="btn-text">تشغيل الصوت</span>
+                            <span class="btn-text">إنشاء صوت</span>
                         </button>
                     </div>
 
                     <div class="progress-panel hidden" id="progress-panel">
-                        <div class="progress-stages">
-                            <div class="stage active">
-                                <div class="stage-icon">1</div>
-                                <div class="stage-label">تهيئة</div>
-                            </div>
-
-                            <div class="stage-connector filling"></div>
-
-                            <div class="stage active">
-                                <div class="stage-icon">2</div>
-                                <div class="stage-label">توليد</div>
-                            </div>
-
-                            <div class="stage-connector"></div>
-
-                            <div class="stage">
-                                <div class="stage-icon">3</div>
-                                <div class="stage-label">إرسال</div>
-                            </div>
-                        </div>
-
                         <div class="progress-track">
                             <div id="progress-fill" class="progress-fill"></div>
                         </div>
-
-                        <div id="progress-status" class="progress-status">جاري تجهيز الصوت...</div>
+                        <div id="progress-status" class="progress-status">جاري إنشاء الصوت...</div>
                         <div id="progress-timer" class="progress-timer">00:00</div>
                     </div>
                 </section>
@@ -105,35 +81,33 @@
                 <section class="section-card glass-panel">
                     <div class="section-head">
                         <div>
-                            <h2>النتيجة</h2>
-                            <p>الصوت الناتج يظهر هنا مباشرة بعد التوليد الكامل.</p>
+                            <h2>المقاطع المنشأة</h2>
+                            <p>يمكنك إنشاء عدة أصوات، تعديل أي مقطع، حذفه، أو تحديده للدمج.</p>
                         </div>
                     </div>
 
-                    <section id="result-section" class="hidden result-panel glass-subpanel">
-                        <div class="section-head">
-                            <div>
-                                <h2 class="success-text">تم توليد الصوت بنجاح 🎉</h2>
-                                <p>يمكنك الاستماع مباشرة أو تحميل الملف يدويًا.</p>
-                            </div>
-                        </div>
+                    <div id="segments-list" class="outputs-grid"></div>
 
-                        <div class="audio-card">
-                            <h3>🎧 النتيجة الصوتية</h3>
-                            <audio id="normal-player" controls preload="none"></audio>
-
-                            <div class="download-row">
-                                <a
-                                    id="download-audio"
-                                    class="secondary-btn hidden"
-                                    download="speech.wav"
-                                    href="#"
-                                >
-                                    تحميل الصوت
-                                </a>
-                            </div>
+                    <div class="section-head" style="margin-top: 28px;">
+                        <div>
+                            <h2>الدمج النهائي</h2>
+                            <p>حدد المقاطع من القائمة بالأعلى، ثم اختر نوع الدمج المطلوب.</p>
                         </div>
-                    </section>
+                    </div>
+
+                    <div class="action-row">
+                        <button class="secondary-btn" type="button" onclick="mergeSegmentsOnly()">
+                            🔹 دمج المقاطع فقط
+                        </button>
+
+                        <button class="secondary-btn" type="button" onclick="mergeFullEpisode()">
+                            🎙️ إنشاء حلقة كاملة
+                        </button>
+
+                        <button class="secondary-btn" type="button" onclick="mergeWithBgm()">
+                            🎵 حلقة كاملة + موسيقى
+                        </button>
+                    </div>
                 </section>
 
             </div>
@@ -144,7 +118,7 @@
                     <div class="section-head">
                         <div>
                             <h3>الصوت</h3>
-                            <p>اختر الصوت المتاح للتوليد.</p>
+                            <p>اختر الصوت المستخدم في الإنشاء.</p>
                         </div>
                     </div>
 
@@ -162,29 +136,31 @@
                 <section class="compact-card glass-panel">
                     <div class="section-head">
                         <div>
-                            <h3>المعاينة السريعة</h3>
-                            <p>استمع للنطق بسرعة قبل التوليد الكامل.</p>
+                            <h3>معلومات النظام</h3>
+                            <p>حفظ ملفات مستقل لكل مقطع.</p>
                         </div>
                     </div>
 
-                    <div class="audio-card glass-subpanel">
-                        <h3>🔊 المعاينة</h3>
-                        <audio id="preview-player" controls preload="none"></audio>
+                    <div class="info-chip-wrap">
+                        <div class="info-chip">API: <span id="api-status">جاري الفحص...</span></div>
+                        <div class="info-chip">الحد: 2000 حرف</div>
+                        <div class="info-chip">الوضع: Segments</div>
                     </div>
                 </section>
 
                 <section class="compact-card glass-panel">
                     <div class="section-head">
                         <div>
-                            <h3>معلومات النظام</h3>
-                            <p>مرتبطة مباشرة بالـ API الحالي.</p>
+                            <h3>ملاحظات الدمج</h3>
+                            <p>سيتم دمج المقاطع المحددة فقط، ومع نجاح الدمج تُحذف المقاطع المستخدمة إذا كان هذا الخيار مفعّلًا في الـ API.</p>
                         </div>
                     </div>
 
                     <div class="info-chip-wrap">
-                        <div class="info-chip">API: <span id="api-status">جاري الفحص...</span></div>
-                        <div class="info-chip">النمط: Temporary Audio</div>
-                        <div class="info-chip">المحرك: XTTS</div>
+                        <div class="info-chip">مقدمة محفوظة</div>
+                        <div class="info-chip">خاتمة محفوظة</div>
+                        <div class="info-chip">فاصل 3 ثوانٍ</div>
+                        <div class="info-chip">موسيقى اختيارية</div>
                     </div>
                 </section>
 
@@ -194,6 +170,6 @@
 
     </main>
 
-    <script src="/static/script.js"></script>
+    <script src="/static/script.js?v=2"></script>
 </body>
 </html>

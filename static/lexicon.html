@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="/static/lexicon.css?v=3" />
+    <link rel="stylesheet" href="/static/lexicon.css?v=5" />
 </head>
 <body class="lexicon-body">
 
@@ -104,12 +104,32 @@
         <section class="glass-panel card">
             <div class="section-head">
                 <div>
-                    <h2>القاموس الحالي</h2>
-                    <p>استعرض الكلمات الحالية، شغّل النطق، عدّلها، أو احذف ما لا تحتاجه.</p>
+                    <h2>كل القاموس</h2>
+                    <p>عرض جميع كلمات القاموس بحسب التصنيفات الحالية.</p>
                 </div>
             </div>
 
+            <div class="lexicon-toolbar">
+                <button class="filter-chip active" type="button" data-filter="all">الكل</button>
+                <button class="filter-chip" type="button" data-filter="misc_pronunciation">كلمات عامة</button>
+                <button class="filter-chip" type="button" data-filter="names_pronunciation">أسماء ومصطلحات</button>
+                <button class="filter-chip" type="button" data-filter="tribes_pronunciation">قبائل</button>
+            </div>
+
             <div id="lexicon-sections" class="lexicon-sections"></div>
+        </section>
+
+        <section class="glass-panel card">
+            <div class="section-head">
+                <div>
+                    <h2>التعلم الذكي</h2>
+                    <p>راجع الكلمات التي تعلمها النظام، ثم اعتمدها أو ارفضها.</p>
+                </div>
+            </div>
+
+            <div id="learning-list" class="lexicon-sections">
+                <div class="empty-state">لا توجد بيانات تعلم حالياً</div>
+            </div>
         </section>
     </main>
 
@@ -154,6 +174,48 @@
         </div>
     </div>
 
-    <script src="/static/lexicon.js?v=3"></script>
+    <!-- Learning Accept Modal -->
+    <div id="accept-learning-modal" class="modal hidden" aria-hidden="true">
+        <div class="modal-backdrop" data-close-accept-modal="true"></div>
+
+        <div class="modal-card glass-panel" role="dialog" aria-modal="true" aria-labelledby="accept-modal-title">
+            <div class="section-head">
+                <div>
+                    <h2 id="accept-modal-title">اعتماد كلمة متعلمة</h2>
+                    <p>اختر التصنيف المناسب قبل إضافة الكلمة إلى القاموس.</p>
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <div class="field">
+                    <label for="accept-original-input">قبل التعديل</label>
+                    <input id="accept-original-input" type="text" readonly />
+                </div>
+
+                <div class="field">
+                    <label for="accept-formatted-input">بعد التعديل</label>
+                    <input id="accept-formatted-input" type="text" readonly />
+                </div>
+
+                <div class="field">
+                    <label for="accept-category-select">التصنيف</label>
+                    <select id="accept-category-select">
+                        <option value="misc_pronunciation">كلمات عامة</option>
+                        <option value="names_pronunciation">أسماء ومصطلحات</option>
+                        <option value="tribes_pronunciation">قبائل</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="accept-form-message" class="form-message hidden"></div>
+
+            <div class="action-row">
+                <button id="confirm-accept-btn" class="primary-btn" type="button">اعتماد وإضافة</button>
+                <button id="cancel-accept-btn" class="danger-btn" type="button">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/lexicon.js?v=5"></script>
 </body>
 </html>

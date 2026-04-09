@@ -8,8 +8,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const manualPreviewPlayer = document.getElementById("manual-preview-player");
     const formMessage = document.getElementById("form-message");
     const lexiconSections = document.getElementById("lexicon-sections");
+    const learningList = document.getElementById("learning-list");
     const totalCount = document.getElementById("total-count");
     const lastRefresh = document.getElementById("last-refresh");
+    const filterChips = Array.from(document.querySelectorAll(".filter-chip"));
 
     // Edit modal
     const editLexiconModal = document.getElementById("edit-lexicon-modal");
@@ -22,6 +24,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const editPreviewPlayer = document.getElementById("edit-preview-player");
     const editFormMessage = document.getElementById("edit-form-message");
 
+    // Accept learning modal
+    const acceptLearningModal = document.getElementById("accept-learning-modal");
+    const acceptOriginalInput = document.getElementById("accept-original-input");
+    const acceptFormattedInput = document.getElementById("accept-formatted-input");
+    const acceptCategorySelect = document.getElementById("accept-category-select");
+    const confirmAcceptBtn = document.getElementById("confirm-accept-btn");
+    const cancelAcceptBtn = document.getElementById("cancel-accept-btn");
+    const acceptFormMessage = document.getElementById("accept-form-message");
+
     const CATEGORY_LABELS = {
         misc_pronunciation: "كلمات عامة",
         names_pronunciation: "أسماء ومصطلحات",
@@ -29,14 +40,23 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     let currentEditItem = null;
+    let currentLearningItem = null;
+    let currentFilter = "all";
+    let currentLexicon = {
+        misc_pronunciation: [],
+        names_pronunciation: [],
+        tribes_pronunciation: [],
+    };
 
     function showMessage(text, type = "success", target = formMessage) {
+        if (!target) return;
         target.textContent = text;
         target.classList.remove("hidden", "success", "error");
         target.classList.add(type);
     }
 
     function hideMessage(target = formMessage) {
+        if (!target) return;
         target.classList.add("hidden");
         target.textContent = "";
         target.classList.remove("success", "error");
@@ -44,15 +64,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function resetAudioPlayer(player) {
         if (!player) return;
-        player.pause();
+        try {
+            player.pause();
+        } catch (_) {}
         player.classList.add("hidden");
         player.removeAttribute("src");
-        player.load();
+        try {
+            player.load();
+        } catch (_) {}
     }
 
     function formatNow() {
-        const now = new Date();
-        return now.toLocaleTimeString("ar");
+        return new Date().toLocaleTimeString("ar");
+    }
+
+    function normalizeText(text) {
+        return (text || "").trim().replace(/\s+/g, " ");
     }
 
     function buildPreviewUrl(text) {
@@ -64,12 +91,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     async function playPreview(text, player = null) {
-        const cleanText = (text || "").trim();
+        const cleanText = normalizeText(text);
         if (!cleanText) {
             throw new Error("النص فارغ");
         }
 
-        const targetPlayer = player || new Audio();
         const url = buildPreviewUrl(cleanText);
 
         if (player) {
@@ -78,9 +104,35 @@ document.addEventListener("DOMContentLoaded", () => {
             player.load();
             await player.play();
         } else {
-            targetPlayer.src = url;
-            await targetPlayer.play();
+            const audio = new Audio(url);
+            await audio.play();
         }
+    }
+
+    function normalizeLexicon(lexicon) {
+        const clean = {
+            misc_pronunciation: [],
+            names_pronunciation: [],
+            tribes_pronunciation: [],
+        };
+
+        Object.keys(CATEGORY_LABELS).forEach((cat) => {
+            const items = Array.isArray(lexicon?.[cat]) ? lexicon[cat] : [];
+
+            items.forEach((item) => {
+                if (Array.isArray(item)) {
+                    item.forEach((sub) => {
+                        if (sub?.original && sub?.formatted) {
+                            clean[cat].push(sub);
+                        }
+                    });
+                } else if (item?.original && item?.formatted) {
+                    clean[cat].push(item);
+                }
+            });
+        });
+
+        return clean;
     }
 
     function openEditLexiconModal(item, category) {
@@ -90,28 +142,69 @@ document.addEventListener("DOMContentLoaded", () => {
             category: category || "misc_pronunciation",
         };
 
-        editOriginalInput.value = currentEditItem.original;
-        editFormattedInput.value = currentEditItem.formatted;
-        editCategoryInput.value = CATEGORY_LABELS[currentEditItem.category] || currentEditItem.category;
+        if (editOriginalInput) editOriginalInput.value = currentEditItem.original;
+        if (editFormattedInput) editFormattedInput.value = currentEditItem.formatted;
+        if (editCategoryInput) {
+            editCategoryInput.value =
+                CATEGORY_LABELS[currentEditItem.category] || currentEditItem.category;
+        }
 
         hideMessage(editFormMessage);
         resetAudioPlayer(editPreviewPlayer);
 
-        editLexiconModal.classList.remove("hidden");
-        editLexiconModal.setAttribute("aria-hidden", "false");
+        if (editLexiconModal) {
+            editLexiconModal.classList.remove("hidden");
+            editLexiconModal.setAttribute("aria-hidden", "false");
+        }
 
         setTimeout(() => {
-            editFormattedInput.focus();
-            editFormattedInput.select();
+            if (editFormattedInput) {
+                editFormattedInput.focus();
+                editFormattedInput.select();
+            }
         }, 30);
     }
 
     function closeEditLexiconModal() {
         currentEditItem = null;
-        editLexiconModal.classList.add("hidden");
-        editLexiconModal.setAttribute("aria-hidden", "true");
+
+        if (editLexiconModal) {
+            editLexiconModal.classList.add("hidden");
+            editLexiconModal.setAttribute("aria-hidden", "true");
+        }
+
         hideMessage(editFormMessage);
         resetAudioPlayer(editPreviewPlayer);
+    }
+
+    function openAcceptLearningModal(change) {
+        currentLearningItem = {
+            original: change.original || "",
+            formatted: change.formatted || "",
+            category: "misc_pronunciation",
+        };
+
+        if (acceptOriginalInput) acceptOriginalInput.value = currentLearningItem.original;
+        if (acceptFormattedInput) acceptFormattedInput.value = currentLearningItem.formatted;
+        if (acceptCategorySelect) acceptCategorySelect.value = currentLearningItem.category;
+
+        hideMessage(acceptFormMessage);
+
+        if (acceptLearningModal) {
+            acceptLearningModal.classList.remove("hidden");
+            acceptLearningModal.setAttribute("aria-hidden", "false");
+        }
+    }
+
+    function closeAcceptLearningModal() {
+        currentLearningItem = null;
+
+        if (acceptLearningModal) {
+            acceptLearningModal.classList.add("hidden");
+            acceptLearningModal.setAttribute("aria-hidden", "true");
+        }
+
+        hideMessage(acceptFormMessage);
     }
 
     function createItemRow(item, category) {
@@ -171,14 +264,16 @@ document.addEventListener("DOMContentLoaded", () => {
                     method: "POST",
                 });
 
+                const data = await safeJson(res);
+
                 if (!res.ok) {
-                    throw new Error("فشل حذف الكلمة");
+                    throw new Error(data.detail || "فشل حذف الكلمة");
                 }
 
                 await loadLexicon();
             } catch (err) {
                 console.error(err);
-                alert("تعذر حذف الكلمة");
+                alert(err.message || "تعذر حذف الكلمة");
             }
         });
 
@@ -194,13 +289,20 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function renderLexicon(lexicon) {
+        if (!lexiconSections) return;
+
         lexiconSections.innerHTML = "";
 
         let total = 0;
-
         Object.keys(CATEGORY_LABELS).forEach((category) => {
+            total += Array.isArray(lexicon[category]) ? lexicon[category].length : 0;
+        });
+
+        const categoriesToRender =
+            currentFilter === "all" ? Object.keys(CATEGORY_LABELS) : [currentFilter];
+
+        categoriesToRender.forEach((category) => {
             const items = Array.isArray(lexicon[category]) ? lexicon[category] : [];
-            total += items.length;
 
             const group = document.createElement("section");
             group.className = "lexicon-group";
@@ -228,30 +330,179 @@ document.addEventListener("DOMContentLoaded", () => {
             lexiconSections.appendChild(group);
         });
 
-        totalCount.textContent = total.toLocaleString("ar");
-        lastRefresh.textContent = formatNow();
+        if (totalCount) totalCount.textContent = total.toLocaleString("ar");
+        if (lastRefresh) lastRefresh.textContent = formatNow();
+    }
+
+    function setActiveFilter(filter) {
+        currentFilter = filter;
+
+        filterChips.forEach((chip) => {
+            chip.classList.toggle("active", chip.dataset.filter === filter);
+        });
+
+        renderLexicon(currentLexicon);
+    }
+
+    function createLearningRow(change) {
+        const row = document.createElement("div");
+        row.className = "lexicon-item";
+
+        const originalBox = document.createElement("div");
+        originalBox.className = "word-box";
+        originalBox.innerHTML = `
+            <span>قبل التعديل</span>
+            <strong>${change.original || ""}</strong>
+        `;
+
+        const formattedBox = document.createElement("div");
+        formattedBox.className = "word-box";
+        formattedBox.innerHTML = `
+            <span>بعد التعديل</span>
+            <strong>${change.formatted || ""}</strong>
+        `;
+
+        const metaBox = document.createElement("div");
+        metaBox.className = "word-box";
+        metaBox.innerHTML = `
+            <span>النوع / الثقة</span>
+            <strong>${change.type || change.change_type || "—"}${change.confidence ? ` • ${Number(change.confidence).toFixed(2)}` : ""}</strong>
+        `;
+
+        const actions = document.createElement("div");
+        actions.className = "item-actions";
+
+        const acceptBtn = document.createElement("button");
+        acceptBtn.className = "primary-btn";
+        acceptBtn.textContent = "اعتماد";
+        acceptBtn.addEventListener("click", () => {
+            openAcceptLearningModal(change);
+        });
+
+        const rejectBtn = document.createElement("button");
+        rejectBtn.className = "danger-btn";
+        rejectBtn.textContent = "رفض";
+        rejectBtn.addEventListener("click", async () => {
+            try {
+                const res = await fetch("/api/v1/learning/reject", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        original: change.original,
+                        formatted: change.formatted,
+                    }),
+                });
+
+                const data = await safeJson(res);
+
+                if (!res.ok) {
+                    throw new Error(data.detail || "فشل رفض الكلمة");
+                }
+
+                await loadLearningLog();
+            } catch (err) {
+                console.error(err);
+                alert(err.message || "تعذر رفض الكلمة");
+            }
+        });
+
+        actions.appendChild(acceptBtn);
+        actions.appendChild(rejectBtn);
+
+        row.appendChild(originalBox);
+        row.appendChild(formattedBox);
+        row.appendChild(metaBox);
+        row.appendChild(actions);
+
+        return row;
+    }
+
+    function renderLearning(items) {
+        if (!learningList) return;
+
+        learningList.innerHTML = "";
+
+        const allChanges = [];
+
+        items.forEach((entry) => {
+            const changes = Array.isArray(entry.changes)
+                ? entry.changes
+                : Array.isArray(entry.learned)
+                    ? entry.learned
+                    : [];
+
+            changes.forEach((change) => {
+                if (change && typeof change === "object") {
+                    allChanges.push(change);
+                }
+            });
+        });
+
+        if (!allChanges.length) {
+            learningList.innerHTML = `<div class="empty-state">لا توجد بيانات تعلم حالياً</div>`;
+            return;
+        }
+
+        allChanges.slice(0, 20).forEach((change) => {
+            learningList.appendChild(createLearningRow(change));
+        });
+    }
+
+    async function safeJson(res) {
+        try {
+            return await res.json();
+        } catch (_) {
+            return {};
+        }
+    }
+
+    async function loadLearningLog() {
+        if (!learningList) return;
+
+        try {
+            const res = await fetch("/api/v1/learning-log");
+            const data = await safeJson(res);
+
+            if (!res.ok) {
+                throw new Error(data.detail || "فشل تحميل سجل التعلم");
+            }
+
+            const items = Array.isArray(data.items) ? data.items : [];
+            renderLearning(items);
+        } catch (err) {
+            console.error(err);
+            learningList.innerHTML = `<div class="empty-state">تعذر تحميل سجل التعلم</div>`;
+        }
     }
 
     async function loadLexicon() {
         try {
             const res = await fetch("/api/v1/lexicon");
+            const data = await safeJson(res);
+
             if (!res.ok) {
-                throw new Error("فشل تحميل القاموس");
+                throw new Error(data.detail || "فشل تحميل القاموس");
             }
 
-            const data = await res.json();
-            renderLexicon(data.lexicon || {});
+            currentLexicon = normalizeLexicon(data.lexicon || {});
+            renderLexicon(currentLexicon);
         } catch (err) {
             console.error(err);
-            lexiconSections.innerHTML = `<div class="empty-state">تعذر تحميل القاموس</div>`;
+            if (lexiconSections) {
+                lexiconSections.innerHTML = `<div class="empty-state">تعذر تحميل القاموس</div>`;
+            }
+            if (totalCount) totalCount.textContent = "0";
+            if (lastRefresh) lastRefresh.textContent = "—";
         }
     }
 
-    previewWordBtn.addEventListener("click", async () => {
+    previewWordBtn?.addEventListener("click", async () => {
         hideMessage();
 
-        const formatted = formattedInput.value.trim();
-        const original = originalInput.value.trim();
+        const formatted = normalizeText(formattedInput?.value);
+        const original = normalizeText(originalInput?.value);
         const text = formatted || original;
 
         if (!text) {
@@ -267,12 +518,12 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    addWordBtn.addEventListener("click", async () => {
+    addWordBtn?.addEventListener("click", async () => {
         hideMessage();
 
-        const original = originalInput.value.trim();
-        const formatted = formattedInput.value.trim();
-        const category = categorySelect.value;
+        const original = normalizeText(originalInput?.value);
+        const formatted = normalizeText(formattedInput?.value);
+        const category = categorySelect?.value || "misc_pronunciation";
 
         if (!original || !formatted) {
             showMessage("أدخل الكلمة الأصلية والنطق المحسن", "error");
@@ -290,32 +541,42 @@ document.addEventListener("DOMContentLoaded", () => {
                 method: "POST",
             });
 
+            const data = await safeJson(res);
+
             if (!res.ok) {
-                throw new Error("فشل إضافة الكلمة");
+                throw new Error(data.detail || "فشل إضافة الكلمة");
             }
 
-            originalInput.value = "";
-            formattedInput.value = "";
+            if (originalInput) originalInput.value = "";
+            if (formattedInput) formattedInput.value = "";
             resetAudioPlayer(manualPreviewPlayer);
 
             showMessage("تمت إضافة الكلمة للقاموس", "success");
+
             await loadLexicon();
         } catch (err) {
             console.error(err);
-            showMessage("تعذر إضافة الكلمة", "error");
+            showMessage(err.message || "تعذر إضافة الكلمة", "error");
         }
     });
 
-    refreshLexiconBtn.addEventListener("click", async () => {
+    refreshLexiconBtn?.addEventListener("click", async () => {
         await loadLexicon();
+        await loadLearningLog();
         hideMessage();
+    });
+
+    filterChips.forEach((chip) => {
+        chip.addEventListener("click", () => {
+            setActiveFilter(chip.dataset.filter || "all");
+        });
     });
 
     editPreviewBtn?.addEventListener("click", async () => {
         hideMessage(editFormMessage);
 
-        const original = editOriginalInput.value.trim();
-        const formatted = editFormattedInput.value.trim();
+        const original = normalizeText(editOriginalInput?.value);
+        const formatted = normalizeText(editFormattedInput?.value);
         const text = formatted || original;
 
         if (!text) {
@@ -339,9 +600,9 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        const original = editOriginalInput.value.trim();
-        const formatted = editFormattedInput.value.trim();
-        const category = currentEditItem.category;
+        const original = normalizeText(editOriginalInput?.value);
+        const formatted = normalizeText(editFormattedInput?.value);
+        const category = currentEditItem.category || "misc_pronunciation";
 
         if (!original || !formatted) {
             showMessage("أدخل النطق المحسن", "error", editFormMessage);
@@ -355,23 +616,36 @@ document.addEventListener("DOMContentLoaded", () => {
                 category,
             });
 
-            const res = await fetch(`/api/v1/lexicon/update?${params.toString()}`, {
+            const updateRes = await fetch(`/api/v1/lexicon/update?${params.toString()}`, {
                 method: "POST",
             });
 
-            let data = {};
-            try {
-                data = await res.json();
-            } catch (_) {
-                data = {};
+            const updateData = await safeJson(updateRes);
+
+            if (!updateRes.ok) {
+                throw new Error(updateData.detail || "فشل تعديل الكلمة");
             }
 
-            if (!res.ok) {
-                throw new Error(data.detail || "فشل تعديل الكلمة");
+            const learnRes = await fetch("/api/v1/lexicon/learn", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    original: currentEditItem.original,
+                    edited: formatted,
+                    category,
+                }),
+            });
+
+            if (!learnRes.ok) {
+                console.warn("تعذر تنفيذ التعلم التلقائي");
             }
 
             showMessage("تم حفظ التعديل بنجاح", "success", editFormMessage);
+
             await loadLexicon();
+            await loadLearningLog();
 
             setTimeout(() => {
                 closeEditLexiconModal();
@@ -380,6 +654,60 @@ document.addEventListener("DOMContentLoaded", () => {
             console.error(err);
             showMessage(err.message || "تعذر حفظ التعديل", "error", editFormMessage);
         }
+    });
+
+    confirmAcceptBtn?.addEventListener("click", async () => {
+        hideMessage(acceptFormMessage);
+
+        if (!currentLearningItem) {
+            showMessage("لا توجد كلمة محددة للاعتماد", "error", acceptFormMessage);
+            return;
+        }
+
+        const original = normalizeText(acceptOriginalInput?.value);
+        const formatted = normalizeText(acceptFormattedInput?.value);
+        const category = acceptCategorySelect?.value || "misc_pronunciation";
+
+        if (!original || !formatted) {
+            showMessage("بيانات الاعتماد غير مكتملة", "error", acceptFormMessage);
+            return;
+        }
+
+        try {
+            const res = await fetch("/api/v1/learning/accept", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    original,
+                    formatted,
+                    category,
+                }),
+            });
+
+            const data = await safeJson(res);
+
+            if (!res.ok) {
+                throw new Error(data.detail || "فشل اعتماد الكلمة");
+            }
+
+            showMessage("تم اعتماد الكلمة وإضافتها للقاموس", "success", acceptFormMessage);
+
+            await loadLexicon();
+            await loadLearningLog();
+
+            setTimeout(() => {
+                closeAcceptLearningModal();
+            }, 400);
+        } catch (err) {
+            console.error(err);
+            showMessage(err.message || "تعذر اعتماد الكلمة", "error", acceptFormMessage);
+        }
+    });
+
+    cancelAcceptBtn?.addEventListener("click", () => {
+        closeAcceptLearningModal();
     });
 
     cancelEditBtn?.addEventListener("click", () => {
@@ -393,11 +721,24 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    acceptLearningModal?.addEventListener("click", (event) => {
+        const target = event.target;
+        if (target instanceof HTMLElement && target.dataset.closeAcceptModal === "true") {
+            closeAcceptLearningModal();
+        }
+    });
+
     document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape" && editLexiconModal && !editLexiconModal.classList.contains("hidden")) {
-            closeEditLexiconModal();
+        if (event.key === "Escape") {
+            if (editLexiconModal && !editLexiconModal.classList.contains("hidden")) {
+                closeEditLexiconModal();
+            }
+            if (acceptLearningModal && !acceptLearningModal.classList.contains("hidden")) {
+                closeAcceptLearningModal();
+            }
         }
     });
 
     loadLexicon();
+    loadLearningLog();
 });

@@ -831,3 +831,71 @@ audio {
         opacity: 0.75;
     }
 }
+.header-tools {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.lexicon-link-btn {
+    position: relative;
+    gap: 10px;
+    white-space: nowrap;
+}
+
+.alert-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #f87171;
+    box-shadow: 0 0 0 4px rgba(248, 113, 113, 0.15);
+    display: inline-block;
+    animation: alertPulse 1.4s infinite ease-in-out;
+}
+
+@keyframes alertPulse {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.18);
+        opacity: 0.75;
+    }
+}
+
+#segments-list .audio-card,
+.segment-card {
+    text-align: right;
+}
+
+.segment-text {
+    margin-bottom: 14px;
+    line-height: 2;
+    color: #dbe4ff;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.segment-actions {
+    margin-top: 14px;
+    justify-content: flex-start;
+}
+
+.edit-box {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.edit-text {
+    min-height: 180px !important;
+    width: 100%;
+}
+
+.segment-check {
+    width: 18px;
+    height: 18px;
+    accent-color: #8b5cf6;
+    cursor: pointer;
+}

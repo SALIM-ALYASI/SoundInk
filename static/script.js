@@ -1,42 +1,22 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const MAX_TEXT_LENGTH = 20000;
-    const PREVIEW_TEXT_LIMIT = 220;
+    const MAX_TEXT_LENGTH = 2000;
 
-    const generateBtn = document.getElementById("generate-btn");
     const textInput = document.getElementById("text-input");
-    const voiceSelect = document.getElementById("voice-select");
-    const btnText = document.querySelector(".btn-text");
-    const previewBtn = document.getElementById("preview-btn");
-    const previewPlayer = document.getElementById("preview-player");
     const charCount = document.getElementById("char-count");
-    const resultSection = document.getElementById("result-section");
-    const normalPlayer = document.getElementById("normal-player");
+    const generateBtn = document.getElementById("generate-btn");
+    const voiceSelect = document.getElementById("voice-select");
+    const refreshVoicesBtn = document.getElementById("refresh-voices-btn");
+    const voiceStatus = document.getElementById("voice-status");
+    const apiStatus = document.getElementById("api-status");
     const errorMsg = document.getElementById("error-message");
+    const segmentsList = document.getElementById("segments-list");
     const progressPanel = document.getElementById("progress-panel");
     const progressFill = document.getElementById("progress-fill");
     const progressStatus = document.getElementById("progress-status");
     const progressTimer = document.getElementById("progress-timer");
-    const refreshVoicesBtn = document.getElementById("refresh-voices-btn");
-    const voiceStatus = document.getElementById("voice-status");
-    const apiStatus = document.getElementById("api-status");
-    const downloadBtn = document.getElementById("download-audio");
 
     let timerInterval = null;
     let progressInterval = null;
-    let currentObjectUrl = null;
-    let currentPreviewUrl = null;
-
-    if (!generateBtn || !textInput || !voiceSelect) {
-        console.error("Missing required UI elements");
-        return;
-    }
-
-    function updateCharCount() {
-        if (!charCount) return;
-        const length = textInput.value.length;
-        charCount.textContent = length.toLocaleString();
-        charCount.style.color = length > MAX_TEXT_LENGTH ? "#f87171" : "";
-    }
 
     function showError(msg) {
         if (!errorMsg) return;
@@ -46,8 +26,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function hideError() {
         if (!errorMsg) return;
-        errorMsg.classList.add("hidden");
         errorMsg.textContent = "";
+        errorMsg.classList.add("hidden");
+    }
+
+    function updateCharCount() {
+        if (!textInput || !charCount) return;
+        const length = textInput.value.length;
+        charCount.textContent = length.toLocaleString();
+        charCount.style.color = length > MAX_TEXT_LENGTH ? "#f87171" : "";
     }
 
     function startTimer() {
@@ -76,53 +63,34 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    function stopProgressAnimation() {
+    function showProgress(message = "جاري إنشاء الصوت...") {
+        if (!progressPanel) return;
+
+        progressPanel.classList.remove("hidden");
+        if (progressStatus) progressStatus.textContent = message;
+        if (progressFill) progressFill.style.width = "15%";
+        if (generateBtn) generateBtn.disabled = true;
+
+        startTimer();
+
+        let width = 15;
+        if (progressInterval) clearInterval(progressInterval);
+
+        progressInterval = setInterval(() => {
+            width = Math.min(width + 8, 90);
+            if (progressFill) {
+                progressFill.style.width = `${width}%`;
+            }
+        }, 400);
+    }
+
+    function hideProgress(success = false) {
         if (progressInterval) {
             clearInterval(progressInterval);
             progressInterval = null;
         }
-    }
 
-    function showProgress(mode = "main") {
         if (!progressPanel) return;
-
-        progressPanel.classList.remove("hidden");
-        generateBtn.disabled = true;
-        if (previewBtn) previewBtn.disabled = true;
-
-        if (btnText) {
-            btnText.textContent = mode === "preview" ? "جاري إنشاء المعاينة..." : "جاري التوليد...";
-        }
-
-        if (progressFill) progressFill.style.width = "15%";
-
-        if (progressStatus) {
-            progressStatus.textContent =
-                mode === "preview"
-                    ? "جاري إنشاء المعاينة الصوتية..."
-                    : "جاري تجهيز الحلقة الصوتية...";
-        }
-
-        startTimer();
-        stopProgressAnimation();
-
-        let width = 15;
-
-        progressInterval = setInterval(() => {
-            if (!progressPanel || progressPanel.classList.contains("hidden")) {
-                stopProgressAnimation();
-                return;
-            }
-
-            width = Math.min(width + (mode === "preview" ? 12 : 7), 92);
-            if (progressFill) progressFill.style.width = `${width}%`;
-        }, mode === "preview" ? 350 : 500);
-    }
-
-    function hideProgress(success = false) {
-        if (!progressPanel) return;
-
-        stopProgressAnimation();
 
         if (success) {
             if (progressFill) progressFill.style.width = "100%";
@@ -130,54 +98,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
             setTimeout(() => {
                 progressPanel.classList.add("hidden");
-            }, 700);
+            }, 600);
         } else {
             progressPanel.classList.add("hidden");
         }
 
-        generateBtn.disabled = false;
-        if (previewBtn) previewBtn.disabled = false;
-        if (btnText) btnText.textContent = "تشغيل الصوت";
+        if (generateBtn) generateBtn.disabled = false;
         stopTimer();
-    }
-
-    function clearOldObjectUrls() {
-        if (currentObjectUrl) {
-            URL.revokeObjectURL(currentObjectUrl);
-            currentObjectUrl = null;
-        }
-
-        if (currentPreviewUrl) {
-            URL.revokeObjectURL(currentPreviewUrl);
-            currentPreviewUrl = null;
-        }
-    }
-
-    function updateDownloadLink(url, filename = "podcast_episode.wav") {
-        if (!downloadBtn) return;
-
-        if (url) {
-            downloadBtn.href = url;
-            downloadBtn.setAttribute("download", filename);
-            downloadBtn.classList.remove("hidden");
-        } else {
-            downloadBtn.removeAttribute("href");
-            downloadBtn.classList.add("hidden");
-        }
-    }
-
-    function buildEpisodeTitle(prefix = "episode") {
-        const now = new Date();
-        const pad = (n) => String(n).padStart(2, "0");
-
-        return `${prefix}_${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
     }
 
     async function checkApi() {
         try {
             const res = await fetch("/api/v1/health");
             const data = await res.json();
-
             if (apiStatus) {
                 apiStatus.textContent = data.status || "ok";
                 apiStatus.style.color = "";
@@ -192,202 +125,489 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function loadVoices() {
         try {
-            if (voiceStatus) {
-                voiceStatus.textContent = "جاري تحميل الأصوات...";
-            }
+            if (voiceStatus) voiceStatus.textContent = "جاري تحميل الأصوات...";
 
             const res = await fetch("/api/v1/voices");
             const data = await res.json();
 
+            if (!voiceSelect) return;
             voiceSelect.innerHTML = "";
 
             const validVoices = (data.voices || []).filter((v) => v.exists);
 
-            if (validVoices.length > 0) {
-                validVoices.forEach((v) => {
-                    const opt = document.createElement("option");
-                    opt.value = v.id;
-                    opt.textContent = v.label || v.id;
-                    voiceSelect.appendChild(opt);
-                });
+            if (!validVoices.length) {
+                voiceSelect.innerHTML = "<option value=''>لا توجد أصوات</option>";
+                if (voiceStatus) voiceStatus.textContent = "لا توجد أصوات جاهزة";
+                return;
+            }
 
-                if (data.default_voice?.id) {
-                    voiceSelect.value = data.default_voice.id;
-                }
+            validVoices.forEach((v) => {
+                const opt = document.createElement("option");
+                opt.value = v.id;
+                opt.textContent = v.label || v.id;
+                voiceSelect.appendChild(opt);
+            });
 
-                if (voiceStatus) {
-                    voiceStatus.textContent = `تم تحميل ${validVoices.length} صوت`;
-                }
-            } else {
-                voiceSelect.innerHTML = "<option value=''>لا توجد أصوات متاحة</option>";
-                if (voiceStatus) {
-                    voiceStatus.textContent = "لا توجد أصوات جاهزة";
-                }
+            if (data.default_voice?.id) {
+                voiceSelect.value = data.default_voice.id;
+            }
+
+            if (voiceStatus) {
+                voiceStatus.textContent = `تم تحميل ${validVoices.length} صوت`;
             }
         } catch (e) {
-            console.error("Failed to load voices", e);
-            voiceSelect.innerHTML = "<option value=''>خطأ في تحميل الأصوات</option>";
+            if (voiceSelect) {
+                voiceSelect.innerHTML = "<option value=''>خطأ في تحميل الأصوات</option>";
+            }
             if (voiceStatus) {
                 voiceStatus.textContent = "فشل تحميل الأصوات";
             }
         }
     }
 
-    async function requestAudioBlob(text, voiceId, { preview = false } = {}) {
-        const endpoint = preview ? "/api/v1/speak" : "/api/v1/podcast";
+    async function fetchSegments() {
+        const res = await fetch("/api/v1/segments");
+        if (!res.ok) throw new Error("فشل تحميل المقاطع");
+        return res.json();
+    }
 
-        const payload = preview
-            ? {
-                  text: text.slice(0, PREVIEW_TEXT_LIMIT),
-                  voice_id: voiceId,
-                  preview: true,
-              }
-            : {
-                  text: text,
-                  voice_id: voiceId,
-                  episode_title: buildEpisodeTitle("episode"),
-                  bgm_id: "echowave",
-                  intro_lead_ms: 2000,
-                  silence_between_segments_ms: 500,
-                  silence_between_paragraphs_ms: 1400,
-                  fast_mode: false,
-              };
-
-        const res = await fetch(endpoint, {
+    async function createSegment(text, voiceId) {
+        const res = await fetch("/api/v1/segments/create", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "audio/wav",
-            },
-            body: JSON.stringify(payload),
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text, voice_id: voiceId }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "فشل إنشاء المقطع");
+        return data;
+    }
+
+    async function updateSegment(id, text, voiceId) {
+        const res = await fetch("/api/v1/segments/update", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id, text, voice_id: voiceId }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "فشل تعديل المقطع");
+        return data;
+    }
+
+    async function deleteSegment(id) {
+        const res = await fetch("/api/v1/segments/delete", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "فشل حذف المقطع");
+        return data;
+    }
+
+    async function mergeSegmentsOnlyRequest(segmentIds) {
+        const res = await fetch("/api/v1/merge/segments-only", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                segment_ids: segmentIds,
+                silence_ms: 3000,
+                output_name: "merged_segments",
+                delete_segments_after_merge: true,
+            }),
         });
 
         if (!res.ok) {
-            let errorMessage = preview
-                ? "فشل إنشاء المعاينة الصوتية"
-                : "فشل توليد الحلقة الصوتية";
+            let message = "فشل دمج المقاطع";
+            try {
+                const data = await res.json();
+                message = data.detail || message;
+            } catch (_) {}
+            throw new Error(message);
+        }
+
+        return res.blob();
+    }
+
+    async function mergeFullEpisodeRequest(segmentIds) {
+        const res = await fetch("/api/v1/merge/full-episode", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                segment_ids: segmentIds,
+                include_intro: true,
+                include_outro: true,
+                include_silence: true,
+                silence_ms: 3000,
+                output_name: "full_episode",
+                delete_segments_after_merge: true,
+            }),
+        });
+
+        if (!res.ok) {
+            let message = "فشل إنشاء الحلقة";
+            try {
+                const data = await res.json();
+                message = data.detail || message;
+            } catch (_) {}
+            throw new Error(message);
+        }
+
+        return res.blob();
+    }
+
+    async function mergeWithBgmRequest(segmentIds, bgmId = "echowave") {
+        const res = await fetch("/api/v1/merge/full-episode-with-bgm", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                segment_ids: segmentIds,
+                include_intro: true,
+                include_outro: true,
+                include_silence: true,
+                silence_ms: 3000,
+                bgm_id: bgmId,
+                output_name: "full_episode_bgm",
+                delete_segments_after_merge: true,
+            }),
+        });
+
+        if (!res.ok) {
+            let message = "فشل إضافة الموسيقى";
+            try {
+                const data = await res.json();
+                message = data.detail || message;
+            } catch (_) {}
+            throw new Error(message);
+        }
+
+        return res.blob();
+    }
+
+    function downloadFile(blob, filename) {
+        const url = window.URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        window.URL.revokeObjectURL(url);
+    }
+
+    function getSelectedSegments() {
+        const checked = document.querySelectorAll(".segment-check:checked");
+        return Array.from(checked).map((el) => el.value);
+    }
+
+    function closeAllEditBoxes() {
+        document.querySelectorAll(".edit-box").forEach((box) => {
+            box.classList.add("hidden");
+        });
+    }
+
+    function buildSegmentCard(segment) {
+        const card = document.createElement("div");
+        card.className = "audio-card glass-subpanel segment-card";
+
+        const audioUrl = `/api/v1/audio/${segment.filename}?t=${Date.now()}`;
+
+        const headerRow = document.createElement("div");
+        headerRow.style.display = "flex";
+        headerRow.style.alignItems = "center";
+        headerRow.style.justifyContent = "space-between";
+        headerRow.style.gap = "12px";
+        headerRow.style.marginBottom = "12px";
+
+        const title = document.createElement("h3");
+        title.textContent = `🎧 مقطع ${segment.id}`;
+        title.style.marginBottom = "0";
+
+        const selectBox = document.createElement("input");
+        selectBox.type = "checkbox";
+        selectBox.className = "segment-check";
+        selectBox.value = segment.id;
+        selectBox.title = "تحديد هذا المقطع للدمج";
+
+        headerRow.appendChild(title);
+        headerRow.appendChild(selectBox);
+
+        const textView = document.createElement("p");
+        textView.className = "segment-text";
+        textView.textContent = segment.text;
+
+        const audio = document.createElement("audio");
+        audio.controls = true;
+        audio.preload = "none";
+        audio.src = audioUrl;
+
+        const actionRow = document.createElement("div");
+        actionRow.className = "action-row segment-actions";
+
+        const editBtn = document.createElement("button");
+        editBtn.type = "button";
+        editBtn.className = "secondary-btn";
+        editBtn.textContent = "تعديل";
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.type = "button";
+        deleteBtn.className = "secondary-btn";
+        deleteBtn.textContent = "حذف";
+
+        const downloadLink = document.createElement("a");
+        downloadLink.className = "secondary-btn";
+        downloadLink.href = audioUrl;
+        downloadLink.download = segment.filename;
+        downloadLink.textContent = "تحميل";
+
+        actionRow.appendChild(downloadLink);
+        actionRow.appendChild(deleteBtn);
+        actionRow.appendChild(editBtn);
+
+        const editBox = document.createElement("div");
+        editBox.className = "edit-box hidden";
+
+        const editTextarea = document.createElement("textarea");
+        editTextarea.className = "main-textarea edit-text";
+        editTextarea.maxLength = 2000;
+        editTextarea.value = segment.text;
+
+        const editActions = document.createElement("div");
+        editActions.className = "action-row";
+
+        const cancelEditBtn = document.createElement("button");
+        cancelEditBtn.type = "button";
+        cancelEditBtn.className = "secondary-btn";
+        cancelEditBtn.textContent = "إلغاء";
+
+        const saveEditBtn = document.createElement("button");
+        saveEditBtn.type = "button";
+        saveEditBtn.className = "secondary-btn";
+        saveEditBtn.textContent = "حفظ التعديل";
+
+        editActions.appendChild(cancelEditBtn);
+        editActions.appendChild(saveEditBtn);
+
+        editBox.appendChild(editTextarea);
+        editBox.appendChild(editActions);
+
+        editBtn.addEventListener("click", () => {
+            closeAllEditBoxes();
+            editTextarea.value = segment.text;
+            editBox.classList.remove("hidden");
+            editTextarea.focus();
+        });
+
+        cancelEditBtn.addEventListener("click", () => {
+            editBox.classList.add("hidden");
+            editTextarea.value = segment.text;
+        });
+
+        saveEditBtn.addEventListener("click", async () => {
+            const newText = editTextarea.value.trim();
+            const voiceId = voiceSelect?.value || "";
+
+            if (!newText) {
+                showError("النص المعدل فارغ");
+                return;
+            }
+
+            if (!voiceId) {
+                showError("اختر صوتًا");
+                return;
+            }
+
+            if (newText.length > MAX_TEXT_LENGTH) {
+                showError("النص المعدل يتجاوز 2000 حرف");
+                return;
+            }
+
+            saveEditBtn.disabled = true;
+            saveEditBtn.textContent = "جاري الحفظ...";
 
             try {
-                const errorData = await res.json();
-                if (errorData?.message) {
-                    errorMessage = errorData.message;
-                }
-            } catch (_) {
-                // ignore json parse failure
+                hideError();
+                showProgress("جاري تحديث المقطع...");
+                await updateSegment(segment.id, newText, voiceId);
+                await renderSegments();
+                hideProgress(true);
+            } catch (err) {
+                console.error("Update segment failed:", err);
+                hideProgress(false);
+                showError(err.message || "فشل تعديل المقطع");
+            } finally {
+                saveEditBtn.disabled = false;
+                saveEditBtn.textContent = "حفظ التعديل";
             }
+        });
 
-            throw new Error(errorMessage);
-        }
+        deleteBtn.addEventListener("click", async () => {
+            try {
+                hideError();
+                showProgress("جاري حذف المقطع...");
+                await deleteSegment(segment.id);
+                await renderSegments();
+                hideProgress(true);
+            } catch (err) {
+                console.error("Delete segment failed:", err);
+                hideProgress(false);
+                showError(err.message || "فشل حذف المقطع");
+            }
+        });
 
-        const blob = await res.blob();
+        card.appendChild(headerRow);
+        card.appendChild(textView);
+        card.appendChild(audio);
+        card.appendChild(actionRow);
+        card.appendChild(editBox);
 
-        return {
-            blob,
-            filename: preview ? "preview.wav" : `${payload.episode_title}.wav`,
-        };
+        return card;
     }
 
-    async function generateAudio({ autoplay = true, preview = false } = {}) {
-        const text = textInput.value.trim();
-        const voiceId = voiceSelect.value;
+    async function renderSegments() {
+        if (!segmentsList) return;
 
-        if (!text) {
-            showError("الرجاء إدخال النص أولًا");
+        segmentsList.innerHTML = "";
+
+        const data = await fetchSegments();
+        const segments = data.segments || [];
+
+        if (!segments.length) {
+            segmentsList.innerHTML = `
+                <div class="audio-card glass-subpanel">
+                    <h3>لا توجد مقاطع بعد</h3>
+                    <p style="color:#94a3b8;">أنشئ أول مقطع ليظهر هنا.</p>
+                </div>
+            `;
             return;
         }
 
-        if (!voiceId) {
-            showError("الرجاء اختيار صوت صالح");
+        segments.forEach((segment) => {
+            segmentsList.appendChild(buildSegmentCard(segment));
+        });
+    }
+
+    async function mergeSegmentsOnly() {
+        const ids = getSelectedSegments();
+
+        if (!ids.length) {
+            showError("اختر مقاطع أولاً");
             return;
         }
-
-        if (text.length > MAX_TEXT_LENGTH) {
-            showError(`النص طويل جدًا، الحد الأقصى هو ${MAX_TEXT_LENGTH} حرف`);
-            return;
-        }
-
-        hideError();
-        showProgress(preview ? "preview" : "main");
 
         try {
-            const { blob, filename } = await requestAudioBlob(text, voiceId, { preview });
-
-            if (preview) {
-                if (currentPreviewUrl) {
-                    URL.revokeObjectURL(currentPreviewUrl);
-                }
-
-                currentPreviewUrl = URL.createObjectURL(blob);
-
-                if (previewPlayer) {
-                    previewPlayer.src = currentPreviewUrl;
-                    previewPlayer.load();
-
-                    try {
-                        await previewPlayer.play();
-                    } catch (err) {
-                        console.warn("Preview autoplay blocked:", err);
-                    }
-                }
-            } else {
-                if (currentObjectUrl) {
-                    URL.revokeObjectURL(currentObjectUrl);
-                }
-
-                currentObjectUrl = URL.createObjectURL(blob);
-
-                if (normalPlayer) {
-                    normalPlayer.src = currentObjectUrl;
-                    normalPlayer.load();
-                }
-
-                updateDownloadLink(currentObjectUrl, filename);
-
-                if (resultSection) {
-                    resultSection.classList.remove("hidden");
-                }
-
-                if (autoplay && normalPlayer) {
-                    try {
-                        await normalPlayer.play();
-                    } catch (err) {
-                        console.warn("Autoplay blocked:", err);
-                    }
-                }
-            }
-
+            hideError();
+            showProgress("جاري دمج المقاطع...");
+            const blob = await mergeSegmentsOnlyRequest(ids);
+            downloadFile(blob, "merged_segments.wav");
+            await renderSegments();
             hideProgress(true);
         } catch (err) {
-            console.error(err);
             hideProgress(false);
-            showError(err.message || "حدث خطأ أثناء توليد الصوت");
+            showError(err.message || "فشل دمج المقاطع");
         }
     }
 
-    generateBtn.addEventListener("click", async () => {
-        await generateAudio({ autoplay: true, preview: false });
-    });
+    async function mergeFullEpisode() {
+        const ids = getSelectedSegments();
 
-    if (previewBtn) {
-        previewBtn.addEventListener("click", async () => {
-            await generateAudio({ autoplay: true, preview: true });
+        if (!ids.length) {
+            showError("اختر مقاطع أولاً");
+            return;
+        }
+
+        try {
+            hideError();
+            showProgress("جاري إنشاء الحلقة الكاملة...");
+            const blob = await mergeFullEpisodeRequest(ids);
+            downloadFile(blob, "full_episode.wav");
+            await renderSegments();
+            hideProgress(true);
+        } catch (err) {
+            hideProgress(false);
+            showError(err.message || "فشل إنشاء الحلقة");
+        }
+    }
+
+    async function mergeWithBgm() {
+        const ids = getSelectedSegments();
+
+        if (!ids.length) {
+            showError("اختر مقاطع أولاً");
+            return;
+        }
+
+        try {
+            hideError();
+            showProgress("جاري إنشاء الحلقة مع الموسيقى...");
+            const blob = await mergeWithBgmRequest(ids, "echowave");
+            downloadFile(blob, "full_episode_bgm.wav");
+            await renderSegments();
+            hideProgress(true);
+        } catch (err) {
+            hideProgress(false);
+            showError(err.message || "فشل إنشاء الحلقة مع الموسيقى");
+        }
+    }
+
+    if (generateBtn) {
+        generateBtn.addEventListener("click", async () => {
+            const text = textInput?.value.trim() || "";
+            const voiceId = voiceSelect?.value || "";
+
+            if (!text) {
+                showError("اكتب النص أولًا");
+                return;
+            }
+
+            if (!voiceId) {
+                showError("اختر صوتًا");
+                return;
+            }
+
+            if (text.length > MAX_TEXT_LENGTH) {
+                showError("الحد الأقصى 2000 حرف");
+                return;
+            }
+
+            try {
+                hideError();
+                showProgress("جاري إنشاء المقطع...");
+                await createSegment(text, voiceId);
+
+                if (textInput) {
+                    textInput.value = "";
+                }
+
+                updateCharCount();
+                await renderSegments();
+                hideProgress(true);
+            } catch (err) {
+                hideProgress(false);
+                showError(err.message || "حدث خطأ أثناء الإنشاء");
+            }
         });
     }
 
     if (refreshVoicesBtn) {
-        refreshVoicesBtn.addEventListener("click", async () => {
-            await loadVoices();
-        });
+        refreshVoicesBtn.addEventListener("click", loadVoices);
     }
 
-    textInput.addEventListener("input", updateCharCount);
+    if (textInput) {
+        textInput.addEventListener("input", updateCharCount);
+    }
 
-    window.addEventListener("beforeunload", () => {
-        clearOldObjectUrls();
-    });
+    // expose merge actions to window for HTML buttons
+    window.mergeSegmentsOnly = mergeSegmentsOnly;
+    window.mergeFullEpisode = mergeFullEpisode;
+    window.mergeWithBgm = mergeWithBgm;
 
-    updateDownloadLink(null);
     checkApi();
     loadVoices();
+    renderSegments();
     updateCharCount();
 });

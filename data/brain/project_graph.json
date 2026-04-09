@@ -1,51 +1,104 @@
 {
-  "project_root": "/Volumes/MyProjects/AI/APVA",
+  "project_root": "/Users/alyasi/MyProjects/AI/SoundInk",
   "modules": [
+    {
+      "path": "api/v1/merge_routes.py",
+      "module": "api.v1.merge_routes",
+      "functions": [
+        "apply_bgm_to_file",
+        "build_merge_inputs",
+        "delete_used_segments",
+        "ensure_file_exists",
+        "export_merged_to_final",
+        "find_bgm_file",
+        "find_segment_by_id",
+        "load_segments",
+        "merge_full_episode",
+        "merge_full_episode_with_bgm",
+        "merge_segments_only",
+        "resolve_segment_audio_path",
+        "safe_output_name",
+        "save_segments"
+      ],
+      "classes": [
+        "MergeEpisodeWithBgmRequest",
+        "MergeFullEpisodeRequest",
+        "MergeSegmentsRequest"
+      ],
+      "lines": 341,
+      "local_imports": [
+        "core.audio_merger"
+      ],
+      "external_imports": [
+        "__future__",
+        "fastapi",
+        "fastapi.responses",
+        "json",
+        "pathlib",
+        "pydantic",
+        "shutil",
+        "typing"
+      ],
+      "errors": []
+    },
+    {
+      "path": "api/v1/preset_routes.py",
+      "module": "api.v1.preset_routes",
+      "functions": [
+        "build_presets",
+        "generate_audio",
+        "generate_silence",
+        "get_preset"
+      ],
+      "classes": [],
+      "lines": 103,
+      "local_imports": [
+        "src.speaker.inference_manager",
+        "src.speaker.text_normalizer"
+      ],
+      "external_imports": [
+        "fastapi",
+        "fastapi.responses",
+        "pathlib",
+        "pydub",
+        "shutil"
+      ],
+      "errors": []
+    },
     {
       "path": "api/v1/routes.py",
       "module": "api.v1.routes",
       "functions": [
-        "add_lexicon_word",
-        "approve_lexicon_suggestion",
-        "brain_summary",
+        "create_segment",
         "delete_file_later",
-        "delete_files_later",
-        "delete_lexicon_word",
-        "edit_lexicon_suggestion",
-        "find_bgm_file",
-        "get_lexicon",
-        "get_lexicon_suggestions",
+        "delete_segment",
+        "generate_saved_audio",
+        "generate_segment_id",
+        "get_audio",
         "health",
-        "is_skip_marker",
+        "is_pause_marker",
+        "list_segments",
         "load_lexicon",
-        "normalize_marker_text",
+        "load_segments",
         "normalize_text_for_tts",
-        "podcast",
-        "preview_pronunciation",
         "read_json_file",
-        "reject_lexicon_suggestion",
         "safe_filename",
-        "save_lexicon",
-        "segments_preview",
+        "save_segments",
         "speak",
         "strip_arabic_diacritics",
-        "update_lexicon_word",
+        "update_segment",
         "voices"
       ],
       "classes": [
-        "SuggestionActionRequest",
-        "SuggestionEditRequest"
+        "SegmentCreateRequest",
+        "SegmentDeleteRequest",
+        "SegmentUpdateRequest",
+        "SpeakRequest"
       ],
-      "lines": 614,
+      "lines": 416,
       "local_imports": [
-        "api.v1.schemas",
-        "core.audio_merger",
         "core.voice_registry",
-        "src.lexicon.manager",
-        "src.podcast.podcast_engine",
         "src.speaker.inference_manager",
-        "src.speaker.retry_corrector",
-        "src.speaker.segmenter",
         "src.speaker.text_normalizer"
       ],
       "external_imports": [
@@ -56,9 +109,10 @@
         "os",
         "pathlib",
         "pydantic",
-        "pydub",
         "re",
-        "typing"
+        "shutil",
+        "typing",
+        "uuid"
       ],
       "errors": []
     },
@@ -71,7 +125,7 @@
         "SegmentRequest",
         "SpeakRequest"
       ],
-      "lines": 106,
+      "lines": 141,
       "local_imports": [],
       "external_imports": [
         "pydantic",
@@ -86,8 +140,10 @@
         "home"
       ],
       "classes": [],
-      "lines": 18,
+      "lines": 26,
       "local_imports": [
+        "api.v1.merge_routes",
+        "api.v1.preset_routes",
         "api.v1.routes"
       ],
       "external_imports": [
@@ -102,12 +158,17 @@
       "path": "core/audio_merger.py",
       "module": "core.audio_merger",
       "functions": [
+        "_build_silence",
         "_export_temp_wav",
         "_load_audio",
         "_loop_to_duration",
+        "_marker_to_chunk",
         "_match_audio_profile",
+        "_normalize_merge_inputs",
+        "_resolve_chunk_pause",
         "_safe_dbfs",
         "_validate_audio_file",
+        "_validate_non_negative",
         "merge_wav_files",
         "mix_voice_with_bgm",
         "mix_voice_with_bgm_ducking"
@@ -115,7 +176,7 @@
       "classes": [
         "AudioChunk"
       ],
-      "lines": 201,
+      "lines": 322,
       "local_imports": [],
       "external_imports": [
         "__future__",
@@ -460,18 +521,20 @@
       "functions": [
         "__init__",
         "_create_temp_output_path",
+        "_is_pause_marker",
         "_load_model",
+        "_normalize_input_text",
+        "_resolve_voice",
+        "_synthesize_to_file",
         "generate_temp_audio",
         "generate_temp_segments"
       ],
       "classes": [
         "InferenceManager"
       ],
-      "lines": 104,
+      "lines": 154,
       "local_imports": [
-        "core.voice_registry",
-        "src.speaker.segmenter",
-        "src.speaker.text_normalizer"
+        "core.voice_registry"
       ],
       "external_imports": [
         "TTS.api",
@@ -542,15 +605,21 @@
       "path": "src/speaker/segmenter.py",
       "module": "src.speaker.segmenter",
       "functions": [
+        "extract_paragraphs",
+        "force_split_by_words",
         "force_split_long_text",
+        "normalize_segment_text",
+        "split_by_soft_punctuation",
         "split_paragraph_into_sentences",
+        "split_single_paragraph",
         "split_text_into_segments",
-        "split_text_into_segments_with_breaks"
+        "split_text_into_segments_with_breaks",
+        "split_very_long_token"
       ],
       "classes": [
         "TextSegment"
       ],
-      "lines": 100,
+      "lines": 215,
       "local_imports": [],
       "external_imports": [
         "__future__",
@@ -570,20 +639,30 @@
         "apply_pronunciation_lexicon",
         "auto_learn_lexicon",
         "build_replacement_pairs",
+        "clean_line_for_tts",
         "context_aware_pronunciation",
         "detect_context",
         "extract_unknown_words",
         "get_best_suggestion",
         "is_in_lexicon",
         "load_lexicon",
+        "normalize_ellipsis",
+        "normalize_marker_text",
+        "normalize_newlines",
         "normalize_punctuation_spacing",
+        "normalize_quotes_and_symbols",
+        "prepare_paragraphs_for_tts",
         "prepare_tts_text",
+        "remove_decorative_lines",
         "remove_extra_spaces",
+        "remove_structural_markers",
         "smart_phonetic_en_to_ar",
-        "strip_diacritics"
+        "strip_diacritics",
+        "strip_invisible_chars",
+        "strip_tatweel"
       ],
       "classes": [],
-      "lines": 286,
+      "lines": 500,
       "local_imports": [
         "src.lexicon.manager"
       ],

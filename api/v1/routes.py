@@ -3,33 +3,27 @@ from __future__ import annotations
 import json
 import os
 import re
+import shutil
+import uuid
 from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
-from pydub import AudioSegment
 
-from api.v1.schemas import PodcastRequest, SegmentRequest, SpeakRequest
-from core.audio_merger import merge_wav_files, mix_voice_with_bgm_ducking
 from core.voice_registry import get_voice, list_voices
-from src.lexicon.manager import (
-    approve_suggestion,
-    grouped_suggestions,
-    mark_suggestion_needs_edit,
-    reject_suggestion,
-)
 from src.speaker.inference_manager import tts_manager
-from src.speaker.segmenter import split_text_into_segments_with_breaks
+from src.speaker.pronunciation_learner import learn_from_text_edit
 from src.speaker.text_normalizer import prepare_tts_text
 
 router = APIRouter()
 
 DATA_DIR = Path("data")
-LEXICON_FILE = DATA_DIR / "lexicon" / "pronunciation_lexicon.json"
-BRAIN_DIR = DATA_DIR / "brain"
-BGM_DIR = Path("assets") / "bgm"
+SEGMENTS_DIR = Path("outputs/segments")
+SEGMENTS_FILE = DATA_DIR / "segments.json"
+LEARNING_LOG_FILE = DATA_DIR / "retry_feedback.jsonl"
+LEXICON_FILE = DATA_DIR / "pronunciation_lexicon.json"
 
 DEFAULT_LEXICON = {
     "misc_pronunciation": [],
@@ -37,54 +31,297 @@ DEFAULT_LEXICON = {
     "tribes_pronunciation": [],
 }
 
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+SEGMENTS_DIR.mkdir(parents=True, exist_ok=True)
+
+if not SEGMENTS_FILE.exists():
+    SEGMENTS_FILE.write_text("[]", encoding="utf-8")
+
+if not LEARNING_LOG_FILE.exists():
+    LEARNING_LOG_FILE.write_text("", encoding="utf-8")
+
+if not LEXICON_FILE.exists():
+    LEXICON_FILE.write_text(
+        json.dumps(DEFAULT_LEXICON, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+MULTISPACE_RE = re.compile(r"\s+")
 ARABIC_DIACRITICS_RE = re.compile(r"[\u0617-\u061A\u064B-\u0652\u0670]")
 
-INTRO_TEXT = """
-أهلاً بكم…
-هذا بودكاست رَسيس مع سالم الحَجري،
-حيث نقترب من الأفكار… ونترك أثرًا يبقى.
-"""
 
-OUTRO_TEXT = """
-وبين كل فكرةٍ وأخرى…
-يبقى الأثر.
-
-… هذا كان بودكاست رَسيس
-إلى لقاءٍ قريب.
-"""
-
-SKIP_MARKERS = [
-    "بودكاست",
-    "إعداد وتقديم",
-    "عنوان الحلقة",
-    "المقدمة",
-    "الفقرة الأولى",
-    "الفقرة الثانية",
-    "الفقرة الثالثة",
-    "الفقرة الرابعة",
-    "الفقرة الخامسة",
-    "الخاتمة",
-]
-
-PAUSE_MARKER_TO_MS = {
-    "$": 3000,
-    "$$": 6000,
-}
+# -----------------------------
+# REQUEST MODELS
+# -----------------------------
+class SpeakRequest(BaseModel):
+    text: str = Field(..., min_length=1)
+    voice_id: str | None = "voice1"
 
 
-class SuggestionActionRequest(BaseModel):
-    suggestion_id: str = Field(..., min_length=1)
+class SegmentCreateRequest(BaseModel):
+    text: str = Field(..., min_length=1, max_length=2000)
+    voice_id: str | None = "voice1"
 
 
-class SuggestionEditRequest(BaseModel):
-    suggestion_id: str = Field(..., min_length=1)
-    suggested: str = Field(..., min_length=1)
+class SegmentUpdateRequest(BaseModel):
+    id: str = Field(..., min_length=1)
+    text: str = Field(..., min_length=1, max_length=2000)
+    voice_id: str | None = "voice1"
+
+
+class SegmentDeleteRequest(BaseModel):
+    id: str = Field(..., min_length=1)
+
+
+class LearnFromEditRequest(BaseModel):
+    old_text: str = Field(..., min_length=1)
+    new_text: str = Field(..., min_length=1)
+
+
+class LexiconLearnRequest(BaseModel):
+    original: str = Field(..., min_length=1)
+    edited: str = Field(..., min_length=1)
+    category: str | None = "misc_pronunciation"
+
+
+class LearningDecisionRequest(BaseModel):
+    original: str = Field(..., min_length=1)
+    formatted: str = Field(..., min_length=1)
+    category: str | None = "misc_pronunciation"
+
+
+class LearningRejectRequest(BaseModel):
+    original: str = Field(..., min_length=1)
+    formatted: str = Field(..., min_length=1)
+
+
+# -----------------------------
+# GENERAL HELPERS
+# -----------------------------
+def normalize_text(text: str) -> str:
+    return MULTISPACE_RE.sub(" ", (text or "").strip())
+
+
+def strip_arabic_diacritics(text: str) -> str:
+    return ARABIC_DIACRITICS_RE.sub("", text or "")
+
+
+def safe_remove_file(path: str | Path) -> None:
+    try:
+        path_str = str(path)
+        if path_str and os.path.exists(path_str):
+            os.remove(path_str)
+    except Exception:
+        pass
+
+
+# -----------------------------
+# SEGMENTS HELPERS
+# -----------------------------
+def load_segments() -> list[dict[str, Any]]:
+    try:
+        data = json.loads(SEGMENTS_FILE.read_text(encoding="utf-8"))
+        return data if isinstance(data, list) else []
+    except Exception:
+        return []
+
+
+def save_segments(data: list[dict[str, Any]]) -> None:
+    SEGMENTS_FILE.write_text(
+        json.dumps(data, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+
+def generate_id() -> str:
+    return str(uuid.uuid4())[:8]
+
+
+def generate_audio(text: str, voice_id: str | None, output_path: Path) -> None:
+    clean_text = prepare_tts_text(text)
+
+    if not clean_text:
+        raise HTTPException(status_code=400, detail="النص بعد المعالجة أصبح فارغًا")
+
+    temp = tts_manager.generate_temp_audio(
+        text=clean_text,
+        voice_id=voice_id,
+    )
+
+    if not temp or not os.path.exists(temp):
+        raise HTTPException(status_code=500, detail="فشل إنشاء الملف الصوتي المؤقت")
+
+    shutil.copyfile(temp, output_path)
+    safe_remove_file(temp)
+
+
+# -----------------------------
+# LEARNING HELPERS
+# -----------------------------
+def append_learning_log(entry: dict[str, Any]) -> None:
+    with open(LEARNING_LOG_FILE, "a", encoding="utf-8") as f:
+        f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+
+def load_learning_log(limit: int = 50) -> list[dict[str, Any]]:
+    if not LEARNING_LOG_FILE.exists():
+        return []
+
+    try:
+        lines = LEARNING_LOG_FILE.read_text(encoding="utf-8").splitlines()
+    except Exception:
+        return []
+
+    items: list[dict[str, Any]] = []
+
+    for line in reversed(lines):
+        try:
+            parsed = json.loads(line)
+            if isinstance(parsed, dict):
+                items.append(parsed)
+        except Exception:
+            continue
+
+        if len(items) >= limit:
+            break
+
+    return items
+
+
+def save_learning_log_items(items: list[dict[str, Any]]) -> None:
+    with open(LEARNING_LOG_FILE, "w", encoding="utf-8") as f:
+        for item in items:
+            f.write(json.dumps(item, ensure_ascii=False) + "\n")
+
+
+def remove_learning_change(original: str, formatted: str) -> bool:
+    items = load_learning_log(limit=10000)
+    changed = False
+    updated_items: list[dict[str, Any]] = []
+
+    for entry in reversed(items):
+        changes = entry.get("changes", [])
+        if not isinstance(changes, list):
+            updated_items.append(entry)
+            continue
+
+        new_changes = []
+        for change in changes:
+            if not isinstance(change, dict):
+                continue
+
+            c_original = normalize_text(str(change.get("original", "") or ""))
+            c_formatted = normalize_text(str(change.get("formatted", "") or ""))
+
+            if c_original == original and c_formatted == formatted:
+                changed = True
+                continue
+
+            new_changes.append(change)
+
+        if new_changes:
+            entry["changes"] = new_changes
+            updated_items.append(entry)
+        elif "changes" in entry and changed:
+            pass
+        else:
+            updated_items.append(entry)
+
+    updated_items.reverse()
+    save_learning_log_items(updated_items)
+    return changed
+
+
+def extract_learning_changes(learning: Any) -> list[dict[str, Any]]:
+    if not isinstance(learning, dict):
+        return []
+
+    if isinstance(learning.get("changes"), list):
+        return [c for c in learning["changes"] if isinstance(c, dict)]
+
+    if isinstance(learning.get("learned"), list):
+        return [c for c in learning["learned"] if isinstance(c, dict)]
+
+    result = learning.get("result")
+    if isinstance(result, dict):
+        if isinstance(result.get("changes"), list):
+            return [c for c in result["changes"] if isinstance(c, dict)]
+        if isinstance(result.get("learned"), list):
+            return [c for c in result["learned"] if isinstance(c, dict)]
+
+    return []
+
+
+def filter_learning_changes(
+    changes: list[dict[str, Any]],
+    min_confidence: float = 0.50,
+) -> list[dict[str, Any]]:
+    filtered: list[dict[str, Any]] = []
+
+    for change in changes:
+        original = normalize_text(str(change.get("original", "") or ""))
+        formatted = normalize_text(str(change.get("formatted", "") or ""))
+        confidence_raw = change.get("confidence", 1)
+
+        try:
+            confidence = float(confidence_raw)
+        except Exception:
+            confidence = 1.0
+
+        if not original or not formatted:
+            continue
+
+        if len(original) < 2:
+            continue
+
+        if original == formatted:
+            continue
+
+        if strip_arabic_diacritics(original) == strip_arabic_diacritics(formatted):
+            filtered.append(
+                {
+                    **change,
+                    "original": original,
+                    "formatted": formatted,
+                    "confidence": confidence,
+                }
+            )
+            continue
+
+        if confidence >= min_confidence:
+            filtered.append(
+                {
+                    **change,
+                    "original": original,
+                    "formatted": formatted,
+                    "confidence": confidence,
+                }
+            )
+
+    return filtered
+
+
+def summarize_learning(learning: Any, filtered_changes: list[dict[str, Any]]) -> dict[str, Any]:
+    base: dict[str, Any] = learning if isinstance(learning, dict) else {}
+
+    detected = (
+        base.get("detected")
+        or base.get("detected_changes")
+        or len(extract_learning_changes(base))
+    )
+
+    return {
+        "detected": detected,
+        "saved": len(filtered_changes),
+        "changes": filtered_changes,
+        "raw": base,
+    }
 
 
 # -----------------------------
 # LEXICON HELPERS
 # -----------------------------
-def load_lexicon() -> dict[str, list[dict[str, str]]]:
+def load_lexicon() -> dict[str, list[dict[str, Any]]]:
     if not LEXICON_FILE.exists():
         return dict(DEFAULT_LEXICON)
 
@@ -96,429 +333,98 @@ def load_lexicon() -> dict[str, list[dict[str, str]]]:
     if not isinstance(data, dict):
         return dict(DEFAULT_LEXICON)
 
-    for key, default_value in DEFAULT_LEXICON.items():
-        if key not in data or not isinstance(data[key], list):
-            data[key] = default_value.copy()
+    normalized = {
+        "misc_pronunciation": [],
+        "names_pronunciation": [],
+        "tribes_pronunciation": [],
+    }
 
-    return data
+    for key in DEFAULT_LEXICON.keys():
+        raw_items = data.get(key, [])
+        clean_items: list[dict[str, Any]] = []
+
+        if isinstance(raw_items, list):
+            for item in raw_items:
+                if isinstance(item, dict) and item.get("original") and item.get("formatted"):
+                    clean_items.append(item)
+                elif isinstance(item, list):
+                    for sub in item:
+                        if isinstance(sub, dict) and sub.get("original") and sub.get("formatted"):
+                            clean_items.append(sub)
+
+        normalized[key] = clean_items
+
+    return normalized
 
 
-def save_lexicon(data: dict[str, Any]) -> None:
-    LEXICON_FILE.parent.mkdir(parents=True, exist_ok=True)
+def save_lexicon(data: dict[str, list[dict[str, Any]]]) -> None:
+    safe_data = {
+        "misc_pronunciation": data.get("misc_pronunciation", []),
+        "names_pronunciation": data.get("names_pronunciation", []),
+        "tribes_pronunciation": data.get("tribes_pronunciation", []),
+    }
+
     LEXICON_FILE.write_text(
-        json.dumps(data, ensure_ascii=False, indent=2),
+        json.dumps(safe_data, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
 
 
-# -----------------------------
-# GENERAL HELPERS
-# -----------------------------
-def safe_filename(name: str) -> str:
-    cleaned = re.sub(r"[^\w\-]+", "_", (name or "").strip(), flags=re.UNICODE)
-    return cleaned.strip("_") or "podcast_episode"
-
-
-def delete_file_later(path: str) -> None:
-    try:
-        if path and os.path.exists(path):
-            os.remove(path)
-    except Exception as exc:
-        print(f"Failed to delete temp file: {path} -> {exc}")
-
-
-def delete_files_later(paths: list[str]) -> None:
-    for path in paths:
-        try:
-            if path and os.path.exists(path):
-                os.remove(path)
-        except Exception as exc:
-            print(f"Failed to delete temp file: {path} -> {exc}")
-
-
-def normalize_text_for_tts(text: str) -> str:
-    return prepare_tts_text(text or "")
-
-
-def read_json_file(path: Path) -> Any:
-    if not path.exists():
-        return {}
-
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except Exception:
-        return {}
-
-
-def strip_arabic_diacritics(text: str) -> str:
-    return ARABIC_DIACRITICS_RE.sub("", text or "")
-
-
-def normalize_marker_text(text: str) -> str:
-    text = strip_arabic_diacritics(text)
-    return re.sub(r"\s+", " ", text).strip()
-
-
-def is_skip_marker(text: str) -> bool:
-    normalized_text = normalize_marker_text(text)
-    normalized_markers = {
-        normalize_marker_text(marker)
-        for marker in SKIP_MARKERS
-    }
-    return normalized_text in normalized_markers
-
-
-def is_pause_marker(text: str) -> bool:
-    return (text or "").strip() in PAUSE_MARKER_TO_MS
-
-
-def get_pause_duration_from_marker(text: str) -> int | None:
-    return PAUSE_MARKER_TO_MS.get((text or "").strip())
-
-
-def find_bgm_file(bgm_id: str) -> Path | None:
-    if not bgm_id:
-        return None
-
-    for ext in (".wav", ".mp3"):
-        candidate = BGM_DIR / f"{bgm_id}{ext}"
-        if candidate.exists():
-            return candidate
-
-    return None
-
-
-def build_podcast_text(raw_text: str) -> str:
-    return (
-        f"{INTRO_TEXT.strip()}\n\n"
-        f"{raw_text.strip()}\n\n"
-        f"{OUTRO_TEXT.strip()}"
-    )
-
-
-def build_preview_segments(
-    clean_text: str,
-    max_chars: int = 220,
-) -> list[dict[str, Any]]:
-    raw_segments = split_text_into_segments_with_breaks(
-        clean_text,
-        max_chars=max_chars,
-    )
-
-    print("RAW SEGMENTS FROM SEGMENTER:")
-    for i, seg in enumerate(raw_segments, start=1):
-        print(i, repr(seg))
-
-    normalized_segments: list[dict[str, Any]] = []
-
-    for seg in raw_segments:
-        text = (seg.get("text") or "").strip()
-        if not text:
+def lexicon_entry_exists(
+    lexicon: dict[str, list[dict[str, Any]]],
+    category: str,
+    original: str,
+    formatted: str | None = None,
+) -> bool:
+    items = lexicon.get(category, [])
+    for item in items:
+        if not isinstance(item, dict):
             continue
 
-        pause_ms = get_pause_duration_from_marker(text)
+        item_original = normalize_text(str(item.get("original", "") or ""))
+        item_formatted = normalize_text(str(item.get("formatted", "") or ""))
 
-        if pause_ms is not None:
-            normalized_segments.append(
-                {
-                    "text": text,
-                    "is_paragraph_break": True,
-                    "type": "pause_marker",
-                    "pause_ms": pause_ms,
-                }
-            )
+        if formatted is None:
+            if item_original == original:
+                return True
+        else:
+            if item_original == original and item_formatted == formatted:
+                return True
+
+    return False
+
+
+def add_changes_to_lexicon(
+    changes: list[dict[str, Any]],
+    default_category: str = "misc_pronunciation",
+) -> int:
+    lexicon = load_lexicon()
+    saved_count = 0
+
+    category = default_category if default_category in lexicon else "misc_pronunciation"
+
+    for change in changes:
+        original = normalize_text(str(change.get("original", "") or ""))
+        formatted = normalize_text(str(change.get("formatted", "") or ""))
+
+        if not original or not formatted:
             continue
 
-        normalized_segments.append(
+        if lexicon_entry_exists(lexicon, category, original, formatted):
+            continue
+
+        lexicon[category].append(
             {
-                "text": text,
-                "is_paragraph_break": bool(seg.get("is_paragraph_break", False)),
-                "type": "skip_marker" if is_skip_marker(text) else "normal",
+                "original": original,
+                "formatted": formatted,
             }
         )
+        saved_count += 1
 
-    print("NORMALIZED PREVIEW SEGMENTS:")
-    for i, seg in enumerate(normalized_segments, start=1):
-        print(i, repr(seg))
+    if saved_count:
+        save_lexicon(lexicon)
 
-    return normalized_segments
-
-
-def build_merge_inputs_from_segments(
-    segments: list[dict[str, Any]],
-    voice_id: str,
-    skip_marker_pause_ms: int,
-) -> tuple[list[Any], list[str]]:
-    merge_inputs: list[Any] = []
-    temp_paths: list[str] = []
-
-    for seg in segments:
-        text = (seg.get("text") or "").strip()
-        if not text:
-            continue
-
-        seg_type = seg.get("type")
-
-        if seg_type == "pause_marker" and is_pause_marker(text):
-            merge_inputs.append(text)
-            continue
-
-        if seg_type == "skip_marker":
-            merge_inputs.append(
-                {
-                    "path": None,
-                    "is_paragraph_break": True,
-                    "silence_ms": int(skip_marker_pause_ms),
-                }
-            )
-            continue
-
-        audio_path = tts_manager.generate_temp_audio(
-            text=text,
-            voice_id=voice_id,
-        )
-
-        if audio_path in PAUSE_MARKER_TO_MS:
-            merge_inputs.append(audio_path)
-            continue
-
-        temp_paths.append(audio_path)
-        merge_inputs.append(audio_path)
-
-    print("MERGE INPUTS:")
-    for i, item in enumerate(merge_inputs, start=1):
-        print(i, repr(item))
-
-    return merge_inputs, temp_paths
-
-
-# -----------------------------
-# LEXICON PREVIEW
-# -----------------------------
-@router.get("/lexicon/preview")
-async def preview_pronunciation(
-    text: str,
-    background_tasks: BackgroundTasks,
-    voice: str = "voice1",
-):
-    preview_text = normalize_text_for_tts(text)
-
-    if not preview_text:
-        raise HTTPException(status_code=400, detail="Text is required")
-
-    if is_pause_marker(preview_text):
-        raise HTTPException(
-            status_code=400,
-            detail="Pause markers cannot be previewed as standalone speech.",
-        )
-
-    try:
-        audio_path = tts_manager.generate_temp_audio(
-            text=preview_text,
-            voice_id=voice,
-        )
-    except Exception as exc:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Preview generation failed: {exc}",
-        ) from exc
-
-    background_tasks.add_task(delete_file_later, audio_path)
-
-    return FileResponse(
-        path=audio_path,
-        media_type="audio/wav",
-        filename="preview.wav",
-    )
-
-
-# -----------------------------
-# LEXICON API
-# -----------------------------
-@router.get("/lexicon")
-async def get_lexicon():
-    return {
-        "status": "ok",
-        "lexicon": load_lexicon(),
-    }
-
-
-@router.post("/lexicon/add")
-async def add_lexicon_word(
-    original: str,
-    formatted: str,
-    category: str = "misc_pronunciation",
-):
-    original = (original or "").strip()
-    formatted = (formatted or "").strip()
-    category = (category or "").strip()
-
-    if not original or not formatted:
-        raise HTTPException(
-            status_code=400,
-            detail="Original and formatted are required",
-        )
-
-    data = load_lexicon()
-
-    if category not in data:
-        data[category] = []
-
-    for item in data[category]:
-        if item.get("original") == original:
-            raise HTTPException(
-                status_code=409,
-                detail="Word already exists in this category",
-            )
-
-    entry = {
-        "original": original,
-        "formatted": formatted,
-    }
-
-    data[category].append(entry)
-    save_lexicon(data)
-
-    return {
-        "status": "ok",
-        "entry": entry,
-    }
-
-
-@router.post("/lexicon/update")
-async def update_lexicon_word(
-    original: str,
-    formatted: str,
-    category: str = "misc_pronunciation",
-):
-    original = (original or "").strip()
-    formatted = (formatted or "").strip()
-    category = (category or "").strip()
-
-    if not original or not formatted:
-        raise HTTPException(
-            status_code=400,
-            detail="Original and formatted are required",
-        )
-
-    data = load_lexicon()
-
-    if category not in data:
-        raise HTTPException(status_code=404, detail="Category not found")
-
-    updated = None
-
-    for item in data[category]:
-        if item.get("original") == original:
-            item["formatted"] = formatted
-            updated = item
-            break
-
-    if not updated:
-        raise HTTPException(status_code=404, detail="Word not found")
-
-    save_lexicon(data)
-
-    return {
-        "status": "ok",
-        "entry": updated,
-    }
-
-
-@router.post("/lexicon/delete")
-async def delete_lexicon_word(
-    original: str,
-    category: str = "misc_pronunciation",
-):
-    original = (original or "").strip()
-    category = (category or "").strip()
-
-    if not original:
-        raise HTTPException(status_code=400, detail="Original is required")
-
-    data = load_lexicon()
-
-    if category not in data:
-        raise HTTPException(status_code=404, detail="Category not found")
-
-    before_count = len(data[category])
-    data[category] = [
-        item for item in data[category]
-        if item.get("original") != original
-    ]
-
-    if len(data[category]) == before_count:
-        raise HTTPException(status_code=404, detail="Word not found")
-
-    save_lexicon(data)
-
-    return {"status": "ok"}
-
-
-# -----------------------------
-# SUGGESTIONS API
-# -----------------------------
-@router.get("/lexicon/suggestions")
-async def get_lexicon_suggestions():
-    data = grouped_suggestions()
-
-    pending_count = len(data.get("pending", []))
-    needs_edit_count = len(data.get("needs_edit", []))
-    has_attention_items = (pending_count + needs_edit_count) > 0
-
-    return {
-        "status": "ok",
-        "suggestions": data,
-        "counts": {
-            "pending": pending_count,
-            "approved": len(data.get("approved", [])),
-            "rejected": len(data.get("rejected", [])),
-            "needs_edit": needs_edit_count,
-        },
-        "has_attention_items": has_attention_items,
-    }
-
-
-@router.post("/lexicon/suggestions/approve")
-async def approve_lexicon_suggestion(payload: SuggestionActionRequest):
-    item = approve_suggestion(payload.suggestion_id)
-
-    if not item:
-        raise HTTPException(status_code=404, detail="Suggestion not found")
-
-    return {
-        "status": "ok",
-        "item": item,
-    }
-
-
-@router.post("/lexicon/suggestions/reject")
-async def reject_lexicon_suggestion(payload: SuggestionActionRequest):
-    item = reject_suggestion(payload.suggestion_id)
-
-    if not item:
-        raise HTTPException(status_code=404, detail="Suggestion not found")
-
-    return {
-        "status": "ok",
-        "item": item,
-    }
-
-
-@router.post("/lexicon/suggestions/edit")
-async def edit_lexicon_suggestion(payload: SuggestionEditRequest):
-    item = mark_suggestion_needs_edit(
-        suggestion_id=payload.suggestion_id,
-        suggested=payload.suggested.strip(),
-    )
-
-    if not item:
-        raise HTTPException(status_code=404, detail="Suggestion not found")
-
-    return {
-        "status": "ok",
-        "item": item,
-    }
+    return saved_count
 
 
 # -----------------------------
@@ -526,10 +432,7 @@ async def edit_lexicon_suggestion(payload: SuggestionEditRequest):
 # -----------------------------
 @router.get("/health")
 async def health():
-    return {
-        "status": "ok",
-        "project": "APVA Next",
-    }
+    return {"status": "ok"}
 
 
 # -----------------------------
@@ -543,185 +446,402 @@ async def voices():
     }
 
 
-@router.get("/brain/summary")
-async def brain_summary():
-    return {
-        "graph": read_json_file(BRAIN_DIR / "project_graph.json"),
-        "issues": read_json_file(BRAIN_DIR / "issues_detected.json"),
-        "cleanup": read_json_file(BRAIN_DIR / "cleanup_advisor_report.json"),
-        "dependency_map": read_json_file(BRAIN_DIR / "dependency_map.json"),
-        "architecture": read_json_file(BRAIN_DIR / "architecture_report.json"),
-        "restructure": read_json_file(BRAIN_DIR / "restructure_plan.json"),
-    }
-
-
 # -----------------------------
-# BASIC SPEAK
+# SPEAK
 # -----------------------------
 @router.post("/speak")
-async def speak(
-    payload: SpeakRequest,
-    background_tasks: BackgroundTasks,
-):
-    raw_text = (payload.text or "").strip()
+async def speak(payload: SpeakRequest, background_tasks: BackgroundTasks):
+    text = normalize_text(payload.text)
 
-    if not raw_text:
-        raise HTTPException(status_code=400, detail="Text is required")
+    if not text:
+        raise HTTPException(status_code=400, detail="text empty")
 
-    preview_text = normalize_text_for_tts(raw_text[:220])
-
-    if not preview_text:
-        raise HTTPException(status_code=400, detail="Prepared text is empty")
-
-    if is_pause_marker(preview_text):
-        raise HTTPException(
-            status_code=400,
-            detail="Pause marker alone cannot be converted to speech.",
-        )
-
-    try:
-        audio_path = tts_manager.generate_temp_audio(
-            text=preview_text,
-            voice_id=payload.voice_id,
-        )
-    except Exception as exc:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Speech generation failed: {exc}",
-        ) from exc
-
-    background_tasks.add_task(delete_file_later, audio_path)
-
-    return FileResponse(
-        path=audio_path,
-        media_type="audio/wav",
-        filename="speech.wav",
+    audio_path = tts_manager.generate_temp_audio(
+        text=prepare_tts_text(text),
+        voice_id=payload.voice_id,
     )
 
+    if not audio_path or not os.path.exists(audio_path):
+        raise HTTPException(status_code=500, detail="speech generation failed")
+
+    background_tasks.add_task(safe_remove_file, audio_path)
+
+    return FileResponse(audio_path, media_type="audio/wav")
+
 
 # -----------------------------
-# SEGMENTS PREVIEW
+# SEGMENTS
 # -----------------------------
-@router.post("/segments/preview")
-async def segments_preview(payload: SegmentRequest):
-    raw_text = (payload.text or "").strip()
+@router.post("/segments/create")
+async def create_segment(payload: SegmentCreateRequest):
+    text = normalize_text(payload.text)
 
-    if not raw_text:
-        raise HTTPException(status_code=400, detail="Text is required")
+    if not text:
+        raise HTTPException(status_code=400, detail="text empty")
 
-    clean_text = normalize_text_for_tts(raw_text)
+    segment_id = generate_id()
+    filename = f"{segment_id}.wav"
+    path = SEGMENTS_DIR / filename
 
-    print("SEGMENTS PREVIEW - CLEAN TEXT:")
-    print(clean_text)
+    generate_audio(text, payload.voice_id, path)
 
-    segments = build_preview_segments(clean_text, max_chars=220)
+    segments = load_segments()
+
+    segment = {
+        "id": segment_id,
+        "text": text,
+        "filename": filename,
+    }
+
+    segments.append(segment)
+    save_segments(segments)
 
     return {
-        "status": "ok",
-        "count": len(segments),
-        "segments": segments,
+        "status": "created",
+        "segment": segment,
+        "audio_url": f"/api/v1/audio/{filename}",
+    }
+
+
+@router.get("/segments")
+async def list_segments():
+    return {"segments": load_segments()}
+
+
+@router.post("/segments/update")
+async def update_segment(payload: SegmentUpdateRequest):
+    segments = load_segments()
+
+    for seg in segments:
+        if seg.get("id") == payload.id:
+            old_text = normalize_text(str(seg.get("text", "") or ""))
+            new_text = normalize_text(payload.text)
+
+            if not new_text:
+                raise HTTPException(status_code=400, detail="text empty")
+
+            learning_raw = learn_from_text_edit(old_text, new_text)
+            raw_changes = extract_learning_changes(learning_raw)
+            filtered_changes = filter_learning_changes(raw_changes, min_confidence=0.50)
+            learning = summarize_learning(learning_raw, filtered_changes)
+
+            if filtered_changes:
+                append_learning_log(
+                    {
+                        "segment_id": seg.get("id"),
+                        "old_text": old_text,
+                        "new_text": new_text,
+                        "changes": filtered_changes,
+                    }
+                )
+
+            path = SEGMENTS_DIR / seg["filename"]
+
+            if path.exists():
+                try:
+                    path.unlink()
+                except Exception as exc:
+                    raise HTTPException(status_code=500, detail=f"failed to replace audio: {exc}") from exc
+
+            generate_audio(new_text, payload.voice_id, path)
+
+            seg["text"] = new_text
+            save_segments(segments)
+
+            return {
+                "status": "updated",
+                "segment": seg,
+                "audio_url": f"/api/v1/audio/{seg['filename']}",
+                "learning": learning,
+            }
+
+    raise HTTPException(status_code=404, detail="segment not found")
+
+
+@router.post("/segments/delete")
+async def delete_segment(payload: SegmentDeleteRequest):
+    segments = load_segments()
+    new_segments: list[dict[str, Any]] = []
+    deleted = None
+
+    for s in segments:
+        if s.get("id") == payload.id:
+            deleted = s
+        else:
+            new_segments.append(s)
+
+    if not deleted:
+        raise HTTPException(status_code=404, detail="not found")
+
+    path = SEGMENTS_DIR / deleted["filename"]
+
+    if path.exists():
+        try:
+            path.unlink()
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail=f"failed to delete file: {exc}") from exc
+
+    save_segments(new_segments)
+
+    return {"status": "deleted"}
+
+
+# -----------------------------
+# LEARNING
+# -----------------------------
+@router.post("/learn-from-edit")
+async def learn_only(payload: LearnFromEditRequest):
+    old_text = normalize_text(payload.old_text)
+    new_text = normalize_text(payload.new_text)
+
+    if not old_text or not new_text:
+        raise HTTPException(status_code=400, detail="invalid input")
+
+    learning_raw = learn_from_text_edit(old_text, new_text)
+    raw_changes = extract_learning_changes(learning_raw)
+    filtered_changes = filter_learning_changes(raw_changes, min_confidence=0.50)
+    learning = summarize_learning(learning_raw, filtered_changes)
+
+    if filtered_changes:
+        append_learning_log(
+            {
+                "old_text": old_text,
+                "new_text": new_text,
+                "changes": filtered_changes,
+            }
+        )
+
+    return {
+        "status": "learned",
+        "result": learning,
+    }
+
+
+@router.get("/learning-log")
+async def get_learning_log():
+    items = load_learning_log(limit=50)
+    return {
+        "items": items,
+        "count": len(items),
+    }
+
+
+@router.post("/learning/accept")
+async def accept_learning(payload: LearningDecisionRequest):
+    original = normalize_text(payload.original)
+    formatted = normalize_text(payload.formatted)
+    category = payload.category or "misc_pronunciation"
+
+    if not original or not formatted:
+        raise HTTPException(status_code=400, detail="invalid input")
+
+    if category not in DEFAULT_LEXICON:
+        category = "misc_pronunciation"
+
+    lexicon = load_lexicon()
+
+    if not lexicon_entry_exists(lexicon, category, original, formatted):
+        lexicon[category].append(
+            {
+                "original": original,
+                "formatted": formatted,
+            }
+        )
+        save_lexicon(lexicon)
+
+    remove_learning_change(original, formatted)
+
+    return {
+        "status": "accepted",
+        "original": original,
+        "formatted": formatted,
+        "category": category,
+    }
+
+
+@router.post("/learning/reject")
+async def reject_learning(payload: LearningRejectRequest):
+    original = normalize_text(payload.original)
+    formatted = normalize_text(payload.formatted)
+
+    if not original or not formatted:
+        raise HTTPException(status_code=400, detail="invalid input")
+
+    removed = remove_learning_change(original, formatted)
+
+    return {
+        "status": "rejected",
+        "removed": removed,
+        "original": original,
+        "formatted": formatted,
     }
 
 
 # -----------------------------
-# PODCAST ENGINE
-# Stable route:
-# request -> clean -> segment -> generate -> merge -> bgm
+# LEXICON
 # -----------------------------
-@router.post("/podcast")
-async def podcast(
-    payload: PodcastRequest,
-    background_tasks: BackgroundTasks,
+@router.get("/lexicon")
+async def get_lexicon():
+    return {"lexicon": load_lexicon()}
+
+
+@router.post("/lexicon/add")
+async def add_lexicon_word(
+    original: str,
+    formatted: str,
+    category: str = "misc_pronunciation",
 ):
-    raw_text = (payload.text or "").strip()
+    original = normalize_text(original)
+    formatted = normalize_text(formatted)
 
-    if not raw_text:
-        raise HTTPException(status_code=400, detail="Text is required")
+    if not original or not formatted:
+        raise HTTPException(status_code=400, detail="invalid input")
 
-    full_text = build_podcast_text(raw_text)
-    clean_text = normalize_text_for_tts(full_text)
+    lexicon = load_lexicon()
 
-    print("PODCAST - RAW TEXT:")
-    print(raw_text)
-    print("PODCAST - FULL TEXT:")
-    print(full_text)
-    print("PODCAST - CLEAN TEXT:")
-    print(clean_text)
+    if category not in lexicon:
+        raise HTTPException(status_code=400, detail="invalid category")
 
-    if not clean_text:
-        raise HTTPException(status_code=400, detail="Prepared text is empty")
+    if lexicon_entry_exists(lexicon, category, original):
+        raise HTTPException(status_code=400, detail="word already exists")
 
-    preview_segments = build_preview_segments(clean_text, max_chars=220)
+    lexicon[category].append(
+        {
+            "original": original,
+            "formatted": formatted,
+        }
+    )
 
-    if not preview_segments:
-        raise HTTPException(status_code=400, detail="No segments generated")
+    save_lexicon(lexicon)
+    return {"status": "added"}
 
-    try:
-        merge_inputs, temp_paths = build_merge_inputs_from_segments(
-            segments=preview_segments,
-            voice_id=payload.voice_id,
-            skip_marker_pause_ms=payload.skip_marker_pause_ms,
-        )
-    except Exception as exc:
-        raise HTTPException(
-            status_code=500,
-            detail=f"TTS failed: {exc}",
-        ) from exc
 
-    if not merge_inputs:
-        delete_files_later(temp_paths)
-        raise HTTPException(status_code=400, detail="No audio chunks generated")
+@router.post("/lexicon/update")
+async def update_lexicon_word(
+    original: str,
+    formatted: str,
+    category: str = "misc_pronunciation",
+):
+    original = normalize_text(original)
+    formatted = normalize_text(formatted)
 
-    try:
-        merged = merge_wav_files(
-            chunks=merge_inputs,
-            silence_between_segments_ms=payload.silence_between_segments_ms,
-            silence_between_paragraphs_ms=payload.silence_between_paragraphs_ms,
-        )
-    except Exception as exc:
-        delete_files_later(temp_paths)
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to merge audio: {exc}",
-        ) from exc
+    if not original or not formatted:
+        raise HTTPException(status_code=400, detail="invalid input")
 
-    final_path = merged
-    generated_files_to_cleanup = [*temp_paths, merged]
+    lexicon = load_lexicon()
 
-    if payload.intro_lead_ms:
-        try:
-            audio = AudioSegment.from_file(final_path)
-            audio = AudioSegment.silent(duration=payload.intro_lead_ms) + audio
-            audio.export(final_path, format="wav")
-        except Exception as exc:
-            delete_files_later(generated_files_to_cleanup)
-            raise HTTPException(
-                status_code=500,
-                detail=f"Failed to add intro lead: {exc}",
-            ) from exc
+    if category not in lexicon:
+        raise HTTPException(status_code=400, detail="invalid category")
 
-    if payload.bgm_id:
-        bgm = find_bgm_file(payload.bgm_id)
-        if bgm:
-            try:
-                mixed_path = mix_voice_with_bgm_ducking(
-                    voice_path=final_path,
-                    bgm_path=str(bgm),
-                )
-                final_path = mixed_path
-                if mixed_path not in generated_files_to_cleanup:
-                    generated_files_to_cleanup.append(mixed_path)
-            except Exception as exc:
-                delete_files_later(generated_files_to_cleanup)
-                raise HTTPException(
-                    status_code=500,
-                    detail=f"Failed to mix background music: {exc}",
-                ) from exc
+    for item in lexicon[category]:
+        if isinstance(item, dict) and normalize_text(str(item.get("original", "") or "")) == original:
+            item["formatted"] = formatted
+            save_lexicon(lexicon)
+            return {"status": "updated"}
 
-    background_tasks.add_task(delete_files_later, generated_files_to_cleanup)
+    raise HTTPException(status_code=404, detail="word not found")
+
+
+@router.post("/lexicon/delete")
+async def delete_lexicon_word(
+    original: str,
+    category: str = "misc_pronunciation",
+):
+    original = normalize_text(original)
+
+    if not original:
+        raise HTTPException(status_code=400, detail="invalid input")
+
+    lexicon = load_lexicon()
+
+    if category not in lexicon:
+        raise HTTPException(status_code=400, detail="invalid category")
+
+    before = len(lexicon[category])
+    lexicon[category] = [
+        item for item in lexicon[category]
+        if not (isinstance(item, dict) and normalize_text(str(item.get("original", "") or "")) == original)
+    ]
+
+    if len(lexicon[category]) == before:
+        raise HTTPException(status_code=404, detail="word not found")
+
+    save_lexicon(lexicon)
+    return {"status": "deleted"}
+
+
+@router.get("/lexicon/preview")
+async def preview_lexicon_word(text: str, voice: str = "salem_podcast"):
+    text = normalize_text(text)
+
+    if not text:
+        raise HTTPException(status_code=400, detail="text empty")
+
+    audio_path = tts_manager.generate_temp_audio(
+        text=prepare_tts_text(text),
+        voice_id=voice,
+    )
+
+    if not audio_path or not os.path.exists(audio_path):
+        raise HTTPException(status_code=500, detail="preview failed")
 
     return FileResponse(
-        path=final_path,
+        audio_path,
         media_type="audio/wav",
-        filename=f"{safe_filename(payload.episode_title)}.wav",
+        filename="preview.wav",
     )
+
+
+@router.post("/lexicon/learn")
+async def learn_lexicon(payload: LexiconLearnRequest):
+    original = normalize_text(payload.original)
+    edited = normalize_text(payload.edited)
+    category = payload.category or "misc_pronunciation"
+
+    if not original or not edited:
+        raise HTTPException(status_code=400, detail="invalid input")
+
+    learning_raw = learn_from_text_edit(original, edited)
+    raw_changes = extract_learning_changes(learning_raw)
+    filtered_changes = filter_learning_changes(raw_changes, min_confidence=0.50)
+
+    if not filtered_changes:
+        return {
+            "status": "ignored",
+            "saved": 0,
+            "changes": [],
+        }
+
+    if category not in DEFAULT_LEXICON:
+        category = "misc_pronunciation"
+
+    saved_count = add_changes_to_lexicon(filtered_changes, default_category=category)
+
+    append_learning_log(
+        {
+            "source": "lexicon_learn",
+            "old_text": original,
+            "new_text": edited,
+            "changes": filtered_changes,
+            "saved_to_lexicon": saved_count,
+        }
+    )
+
+    return {
+        "status": "learned",
+        "saved": saved_count,
+        "changes": filtered_changes,
+    }
+
+
+# -----------------------------
+# AUDIO
+# -----------------------------
+@router.get("/audio/{filename}")
+async def get_audio(filename: str):
+    path = SEGMENTS_DIR / filename
+
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="file not found")
+
+    return FileResponse(path, media_type="audio/wav")
