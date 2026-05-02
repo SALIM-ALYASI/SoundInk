@@ -1,5 +1,5 @@
 {
-  "project_root": "/Users/alyasi/MyProjects/AI/SoundInk",
+  "project_root": "/Users/alyasi/MyProjects/AI/مجلد بلا عنوان/SoundInk",
   "modules": [
     {
       "path": "api/v1/merge_routes.py",
@@ -50,16 +50,20 @@
         "generate_silence",
         "get_preset"
       ],
-      "classes": [],
-      "lines": 103,
+      "classes": [
+        "PresetBuildRequest"
+      ],
+      "lines": 131,
       "local_imports": [
         "src.speaker.inference_manager",
         "src.speaker.text_normalizer"
       ],
       "external_imports": [
+        "__future__",
         "fastapi",
         "fastapi.responses",
         "pathlib",
+        "pydantic",
         "pydub",
         "shutil"
       ],
@@ -69,36 +73,58 @@
       "path": "api/v1/routes.py",
       "module": "api.v1.routes",
       "functions": [
+        "accept_learning",
+        "add_changes_to_lexicon",
+        "add_lexicon_word",
+        "append_learning_log",
         "create_segment",
-        "delete_file_later",
+        "delete_lexicon_word",
         "delete_segment",
-        "generate_saved_audio",
-        "generate_segment_id",
+        "extract_learning_changes",
+        "filter_learning_changes",
+        "generate_audio",
+        "generate_id",
         "get_audio",
+        "get_learning_log",
+        "get_lexicon",
         "health",
-        "is_pause_marker",
+        "learn_lexicon",
+        "learn_only",
+        "lexicon_entry_exists",
         "list_segments",
+        "load_learning_log",
         "load_lexicon",
         "load_segments",
-        "normalize_text_for_tts",
-        "read_json_file",
-        "safe_filename",
+        "normalize_text",
+        "preview_lexicon_word",
+        "reject_learning",
+        "remove_learning_change",
+        "safe_remove_file",
+        "save_learning_log_items",
+        "save_lexicon",
         "save_segments",
         "speak",
         "strip_arabic_diacritics",
+        "summarize_learning",
+        "update_lexicon_word",
         "update_segment",
         "voices"
       ],
       "classes": [
+        "LearnFromEditRequest",
+        "LearningDecisionRequest",
+        "LearningRejectRequest",
+        "LexiconLearnRequest",
         "SegmentCreateRequest",
         "SegmentDeleteRequest",
         "SegmentUpdateRequest",
         "SpeakRequest"
       ],
-      "lines": 416,
+      "lines": 866,
       "local_imports": [
         "core.voice_registry",
         "src.speaker.inference_manager",
+        "src.speaker.pronunciation_learner",
         "src.speaker.text_normalizer"
       ],
       "external_imports": [
@@ -137,16 +163,18 @@
       "path": "app.py",
       "module": "app",
       "functions": [
+        "health",
         "home"
       ],
       "classes": [],
-      "lines": 26,
+      "lines": 39,
       "local_imports": [
         "api.v1.merge_routes",
         "api.v1.preset_routes",
         "api.v1.routes"
       ],
       "external_imports": [
+        "__future__",
         "fastapi",
         "fastapi.responses",
         "fastapi.staticfiles",
@@ -524,6 +552,8 @@
         "_is_pause_marker",
         "_load_model",
         "_normalize_input_text",
+        "_normalize_speed",
+        "_postprocess_speed",
         "_resolve_voice",
         "_synthesize_to_file",
         "generate_temp_audio",
@@ -532,7 +562,7 @@
       "classes": [
         "InferenceManager"
       ],
-      "lines": 154,
+      "lines": 194,
       "local_imports": [
         "core.voice_registry"
       ],
@@ -540,6 +570,7 @@
         "TTS.api",
         "__future__",
         "pathlib",
+        "pydub",
         "tempfile",
         "typing"
       ],
@@ -563,6 +594,38 @@
         "__future__",
         "dataclasses",
         "subprocess",
+        "typing"
+      ],
+      "errors": []
+    },
+    {
+      "path": "src/speaker/pronunciation_learner.py",
+      "module": "src.speaker.pronunciation_learner",
+      "functions": [
+        "clean",
+        "extract_changes",
+        "is_valid_change",
+        "learn_from_text_edit",
+        "log_feedback",
+        "save_change",
+        "similarity",
+        "strip_diacritics"
+      ],
+      "classes": [
+        "Change"
+      ],
+      "lines": 148,
+      "local_imports": [
+        "src.lexicon.manager"
+      ],
+      "external_imports": [
+        "__future__",
+        "dataclasses",
+        "datetime",
+        "difflib",
+        "json",
+        "pathlib",
+        "re",
         "typing"
       ],
       "errors": []

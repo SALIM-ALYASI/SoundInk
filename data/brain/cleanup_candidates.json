@@ -28,6 +28,7 @@
     "src/podcast/podcast_engine.py",
     "src/speaker/inference_manager.py",
     "src/speaker/pronunciation_ai.py",
+    "src/speaker/pronunciation_learner.py",
     "src/speaker/retry_corrector.py",
     "src/speaker/segmenter.py",
     "src/speaker/text_normalizer.py"

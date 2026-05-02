@@ -1,0 +1,37 @@
+{
+  "misc_pronunciation": [],
+  "names_pronunciation": [],
+  "tribes_pronunciation": [],
+  "learned": [
+    {
+      "original": "نُشارِكها",
+      "formatted": "نشاركها",
+      "type": "word",
+      "confidence": 1.0
+    },
+    {
+      "original": "وَالاعْتِياد",
+      "formatted": "والاعتياد",
+      "type": "word",
+      "confidence": 1.0
+    },
+    {
+      "original": "وَهُو:",
+      "formatted": "وَهُوة",
+      "type": "word",
+      "confidence": 0.75
+    },
+    {
+      "original": "تسهّل حياتنا،",
+      "formatted": "تُسَهِّلُ حياتَنا،",
+      "type": "phrase",
+      "confidence": 1.0
+    },
+    {
+      "original": "نعيش",
+      "formatted": "نَعِيش",
+      "type": "word",
+      "confidence": 1.0
+    }
+  ]
+}

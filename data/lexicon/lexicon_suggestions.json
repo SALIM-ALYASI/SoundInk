@@ -1,0 +1,93 @@
+[
+  {
+    "id": "sug_770b20a44120",
+    "original": "app",
+    "suggested": "ابب",
+    "recognized": "",
+    "category": "misc_pronunciation",
+    "status": "pending",
+    "similarity": 0.5,
+    "audio_path": "",
+    "count": 1,
+    "created_at": "2026-04-13T07:48:19.461920+00:00",
+    "updated_at": "2026-04-13T07:48:19.461920+00:00"
+  },
+  {
+    "id": "sug_80b6236c56e7",
+    "original": "py",
+    "suggested": "بي",
+    "recognized": "",
+    "category": "misc_pronunciation",
+    "status": "pending",
+    "similarity": 0.5,
+    "audio_path": "",
+    "count": 1,
+    "created_at": "2026-04-13T07:48:19.462425+00:00",
+    "updated_at": "2026-04-13T07:48:19.462425+00:00"
+  },
+  {
+    "id": "sug_c68def6cbdcd",
+    "original": "include",
+    "suggested": "ينكلودي",
+    "recognized": "",
+    "category": "misc_pronunciation",
+    "status": "pending",
+    "similarity": 0.5,
+    "audio_path": "",
+    "count": 1,
+    "created_at": "2026-04-13T07:48:19.462783+00:00",
+    "updated_at": "2026-04-13T07:48:19.462783+00:00"
+  },
+  {
+    "id": "sug_ee92582fc5e0",
+    "original": "preset",
+    "suggested": "بريسيت",
+    "recognized": "",
+    "category": "misc_pronunciation",
+    "status": "pending",
+    "similarity": 0.5,
+    "audio_path": "",
+    "count": 1,
+    "created_at": "2026-04-13T07:48:19.463171+00:00",
+    "updated_at": "2026-04-13T07:48:19.463171+00:00"
+  },
+  {
+    "id": "sug_7cf6bec51399",
+    "original": "routes",
+    "suggested": "رووتيس",
+    "recognized": "",
+    "category": "misc_pronunciation",
+    "status": "pending",
+    "similarity": 0.5,
+    "audio_path": "",
+    "count": 1,
+    "created_at": "2026-04-13T07:48:19.463573+00:00",
+    "updated_at": "2026-04-13T07:48:19.463573+00:00"
+  },
+  {
+    "id": "sug_18f5109ab09b",
+    "original": "Postman",
+    "suggested": "بوستمان",
+    "recognized": "",
+    "category": "misc_pronunciation",
+    "status": "pending",
+    "similarity": 0.5,
+    "audio_path": "",
+    "count": 1,
+    "created_at": "2026-04-13T07:48:19.464030+00:00",
+    "updated_at": "2026-04-13T07:48:19.464030+00:00"
+  },
+  {
+    "id": "sug_e6400c92f1ca",
+    "original": "Swagger",
+    "suggested": "سواججير",
+    "recognized": "",
+    "category": "misc_pronunciation",
+    "status": "pending",
+    "similarity": 0.5,
+    "audio_path": "",
+    "count": 1,
+    "created_at": "2026-04-13T07:48:19.464496+00:00",
+    "updated_at": "2026-04-13T07:48:19.464496+00:00"
+  }
+]

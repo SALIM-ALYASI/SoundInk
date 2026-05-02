@@ -56,17 +56,20 @@ ARABIC_DIACRITICS_RE = re.compile(r"[\u0617-\u061A\u064B-\u0652\u0670]")
 class SpeakRequest(BaseModel):
     text: str = Field(..., min_length=1)
     voice_id: str | None = "voice1"
+    speed: float = Field(default=1.0, ge=0.8, le=1.3)
 
 
 class SegmentCreateRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=2000)
     voice_id: str | None = "voice1"
+    speed: float = Field(default=1.0, ge=0.8, le=1.3)
 
 
 class SegmentUpdateRequest(BaseModel):
     id: str = Field(..., min_length=1)
     text: str = Field(..., min_length=1, max_length=2000)
     voice_id: str | None = "voice1"
+    speed: float = Field(default=1.0, ge=0.8, le=1.3)
 
 
 class SegmentDeleteRequest(BaseModel):
@@ -137,7 +140,12 @@ def generate_id() -> str:
     return str(uuid.uuid4())[:8]
 
 
-def generate_audio(text: str, voice_id: str | None, output_path: Path) -> None:
+def generate_audio(
+    text: str,
+    voice_id: str | None,
+    output_path: Path,
+    speed: float = 1.0,
+) -> None:
     clean_text = prepare_tts_text(text)
 
     if not clean_text:
@@ -146,6 +154,7 @@ def generate_audio(text: str, voice_id: str | None, output_path: Path) -> None:
     temp = tts_manager.generate_temp_audio(
         text=clean_text,
         voice_id=voice_id,
+        speed=speed,
     )
 
     if not temp or not os.path.exists(temp):
@@ -459,6 +468,7 @@ async def speak(payload: SpeakRequest, background_tasks: BackgroundTasks):
     audio_path = tts_manager.generate_temp_audio(
         text=prepare_tts_text(text),
         voice_id=payload.voice_id,
+        speed=payload.speed,
     )
 
     if not audio_path or not os.path.exists(audio_path):
@@ -483,7 +493,7 @@ async def create_segment(payload: SegmentCreateRequest):
     filename = f"{segment_id}.wav"
     path = SEGMENTS_DIR / filename
 
-    generate_audio(text, payload.voice_id, path)
+    generate_audio(text, payload.voice_id, path, payload.speed)
 
     segments = load_segments()
 
@@ -491,6 +501,8 @@ async def create_segment(payload: SegmentCreateRequest):
         "id": segment_id,
         "text": text,
         "filename": filename,
+        "voice_id": payload.voice_id,
+        "speed": payload.speed,
     }
 
     segments.append(segment)
@@ -543,9 +555,11 @@ async def update_segment(payload: SegmentUpdateRequest):
                 except Exception as exc:
                     raise HTTPException(status_code=500, detail=f"failed to replace audio: {exc}") from exc
 
-            generate_audio(new_text, payload.voice_id, path)
+            generate_audio(new_text, payload.voice_id, path, payload.speed)
 
             seg["text"] = new_text
+            seg["voice_id"] = payload.voice_id
+            seg["speed"] = payload.speed
             save_segments(segments)
 
             return {
@@ -771,7 +785,11 @@ async def delete_lexicon_word(
 
 
 @router.get("/lexicon/preview")
-async def preview_lexicon_word(text: str, voice: str = "salem_podcast"):
+async def preview_lexicon_word(
+    text: str,
+    voice: str = "salem_podcast",
+    speed: float = 1.0,
+):
     text = normalize_text(text)
 
     if not text:
@@ -780,6 +798,7 @@ async def preview_lexicon_word(text: str, voice: str = "salem_podcast"):
     audio_path = tts_manager.generate_temp_audio(
         text=prepare_tts_text(text),
         voice_id=voice,
+        speed=speed,
     )
 
     if not audio_path or not os.path.exists(audio_path):
