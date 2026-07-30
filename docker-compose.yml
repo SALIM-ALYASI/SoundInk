@@ -1,0 +1,23 @@
+services:
+  soundink:
+    build: .
+    container_name: soundink
+    restart: unless-stopped
+    ports:
+      - "5050:5050"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./outputs:/app/outputs
+      - ./storage:/app/storage
+      - model_cache:/root/.local/share/tts
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5050/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  model_cache:

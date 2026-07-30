@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+.git/
+.env
+storage/logs/
+storage/sessions/
+storage/tmp/
+outputs/
+data/outputs/
+*.md
+.DS_Store

@@ -1,5 +1,5 @@
 {
-  "project_root": "/Users/alyasi/MyProjects/AI/مجلد بلا عنوان/SoundInk",
+  "project_root": "/Volumes/Projects/AI/SoundInk",
   "modules": [
     {
       "path": "api/v1/merge_routes.py",
@@ -562,13 +562,15 @@
       "classes": [
         "InferenceManager"
       ],
-      "lines": 194,
+      "lines": 237,
       "local_imports": [
-        "core.voice_registry"
+        "core.voice_registry",
+        "src.speaker.segmenter"
       ],
       "external_imports": [
         "TTS.api",
         "__future__",
+        "os",
         "pathlib",
         "pydub",
         "tempfile",
@@ -682,7 +684,7 @@
       "classes": [
         "TextSegment"
       ],
-      "lines": 215,
+      "lines": 192,
       "local_imports": [],
       "external_imports": [
         "__future__",
@@ -695,37 +697,22 @@
       "path": "src/speaker/text_normalizer.py",
       "module": "src.speaker.text_normalizer",
       "functions": [
-        "_compiled_pattern",
-        "_safe_pattern_for_phrase",
-        "apply_adaptive_pronunciation",
-        "apply_context_pronunciation",
-        "apply_pronunciation_lexicon",
-        "auto_learn_lexicon",
-        "build_replacement_pairs",
         "clean_line_for_tts",
-        "context_aware_pronunciation",
-        "detect_context",
-        "extract_unknown_words",
-        "get_best_suggestion",
-        "is_in_lexicon",
-        "load_lexicon",
         "normalize_ellipsis",
         "normalize_marker_text",
         "normalize_newlines",
         "normalize_punctuation_spacing",
         "normalize_quotes_and_symbols",
-        "prepare_paragraphs_for_tts",
         "prepare_tts_text",
         "remove_decorative_lines",
         "remove_extra_spaces",
         "remove_structural_markers",
-        "smart_phonetic_en_to_ar",
         "strip_diacritics",
         "strip_invisible_chars",
         "strip_tatweel"
       ],
       "classes": [],
-      "lines": 500,
+      "lines": 174,
       "local_imports": [
         "src.lexicon.manager"
       ],

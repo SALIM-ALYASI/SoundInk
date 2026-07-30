@@ -258,7 +258,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return res.blob();
     }
 
-    async function mergeWithBgmRequest(segmentIds, bgmId = "echowave") {
+    async function mergeWithBgmRequest(segmentIds, bgmId = "echowave", outputName = "full_episode_bgm") {
         const res = await fetch("/api/v1/merge/full-episode-with-bgm", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -269,7 +269,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 include_silence: true,
                 silence_ms: 3000,
                 bgm_id: bgmId,
-                output_name: "full_episode_bgm",
+                output_name: outputName,
                 delete_segments_after_merge: true,
             }),
         });
@@ -601,10 +601,32 @@ document.addEventListener("DOMContentLoaded", () => {
         textInput.addEventListener("input", updateCharCount);
     }
 
+    async function mergeWithWaterBgm() {
+        const ids = getSelectedSegments();
+
+        if (!ids.length) {
+            showError("اختر مقاطع أولاً");
+            return;
+        }
+
+        try {
+            hideError();
+            showProgress("جاري إنشاء الحلقة مع موسيقى الماء...");
+            const blob = await mergeSegmentsOnlyRequest(ids);
+            downloadFile(blob, "full_episode_water_no_intro.wav");
+            await renderSegments();
+            hideProgress(true);
+        } catch (err) {
+            hideProgress(false);
+            showError(err.message || "فشل إنشاء الحلقة مع موسيقى الماء");
+        }
+    }
+
     // expose merge actions to window for HTML buttons
     window.mergeSegmentsOnly = mergeSegmentsOnly;
     window.mergeFullEpisode = mergeFullEpisode;
     window.mergeWithBgm = mergeWithBgm;
+    window.mergeWithWaterBgm = mergeWithWaterBgm;
 
     checkApi();
     loadVoices();

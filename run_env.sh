@@ -1,13 +1,23 @@
 #!/bin/bash
 
-source /opt/homebrew/Caskroom/miniforge/base/etc/profile.d/conda.sh
-conda activate ai-agent
+cd "$(dirname "$0")" || exit 1
 
-uvicorn app:app --reload --port 5000
+if [ ! -d ".venv" ]; then
+  python3 -m venv .venv
+fi
+
+source .venv/bin/activate
+
+pip install -q -r requirements.txt
+
+export COQUI_TOS_AGREED=1
+
+uvicorn app:app --reload --host 0.0.0.0 --port 5050
 
 
 
-# ./run_env.sh
+
+# du -sh Audio
 
 
-# python3 src/brain/project_analyzer.py
+# python3 src/brain/project_analyzer.py 

@@ -32,6 +32,12 @@
       "formatted": "نَعِيش",
       "type": "word",
       "confidence": 1.0
+    },
+    {
+      "original": "حَمِيدُ،",
+      "formatted": "حميد",
+      "type": "word",
+      "confidence": 0.8888888888888888
     }
   ]
 }
