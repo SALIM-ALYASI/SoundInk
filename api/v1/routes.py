@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 from core.voice_registry import get_voice, list_voices
 from src.speaker.inference_manager import tts_manager
 from src.speaker.pronunciation_learner import learn_from_text_edit
+from src.speaker.retry_corrector import generate_and_validate_segment
 from src.speaker.text_normalizer import prepare_tts_text
 
 router = APIRouter()
@@ -146,22 +147,23 @@ def generate_audio(
     output_path: Path,
     speed: float = 1.0,
 ) -> None:
-    clean_text = prepare_tts_text(text)
+    if not (text or "").strip():
+        raise HTTPException(status_code=400, detail="النص فارغ")
 
-    if not clean_text:
-        raise HTTPException(status_code=400, detail="النص بعد المعالجة أصبح فارغًا")
-
-    temp = tts_manager.generate_temp_audio(
-        text=clean_text,
-        voice_id=voice_id,
+    result = generate_and_validate_segment(
+        text=text,
+        voice_id=voice_id or "voice1",
         speed=speed,
     )
 
-    if not temp or not os.path.exists(temp):
-        raise HTTPException(status_code=500, detail="فشل إنشاء الملف الصوتي المؤقت")
+    if not result.audio_path or not os.path.exists(result.audio_path):
+        raise HTTPException(
+            status_code=500,
+            detail=result.error or "فشل إنشاء الملف الصوتي المؤقت",
+        )
 
-    shutil.copyfile(temp, output_path)
-    safe_remove_file(temp)
+    shutil.copyfile(result.audio_path, output_path)
+    safe_remove_file(result.audio_path)
 
 
 # -----------------------------

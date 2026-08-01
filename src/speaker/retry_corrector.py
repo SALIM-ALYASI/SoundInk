@@ -182,6 +182,7 @@ def try_create_suggestion(
 def generate_and_validate_segment(
     text: str,
     voice_id: str,
+    speed: float = 1.0,
     min_score: float = MIN_ACCEPTANCE_SCORE,
     max_retries: int = MAX_RETRIES,
 ) -> RetryResult:
@@ -205,6 +206,7 @@ def generate_and_validate_segment(
             audio_path = tts_manager.generate_temp_audio(
                 text=current_text,
                 voice_id=voice_id,
+                speed=speed,
             )
         except Exception as exc:
             error_msg = f"TTS generation failed: {exc}"
