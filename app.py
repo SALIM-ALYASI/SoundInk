@@ -9,6 +9,7 @@ from fastapi.templating import Jinja2Templates
 from api.v1.routes import router as api_router
 from api.v1.preset_routes import router as preset_router
 from api.v1.merge_routes import router as merge_router
+from api.v1.job_routes import router as job_router
 from core.config import get_settings
 from core.security import require_api_key
 
@@ -36,6 +37,7 @@ _api_dependencies = [Depends(require_api_key)]
 app.include_router(api_router, prefix="/api/v1", tags=["Main API"], dependencies=_api_dependencies)
 app.include_router(preset_router, prefix="/api/v1", tags=["Presets"], dependencies=_api_dependencies)
 app.include_router(merge_router, prefix="/api/v1", tags=["Merge"], dependencies=_api_dependencies)
+app.include_router(job_router, prefix="/api/v1", tags=["Async TTS Jobs"], dependencies=_api_dependencies)
 
 
 @app.get("/", response_class=HTMLResponse)
