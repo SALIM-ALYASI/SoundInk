@@ -30,6 +30,7 @@ DEFAULT_LEXICON = {
     "misc_pronunciation": [],
     "names_pronunciation": [],
     "tribes_pronunciation": [],
+    "english_pronunciation": [],
 }
 
 DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -344,11 +345,7 @@ def load_lexicon() -> dict[str, list[dict[str, Any]]]:
     if not isinstance(data, dict):
         return dict(DEFAULT_LEXICON)
 
-    normalized = {
-        "misc_pronunciation": [],
-        "names_pronunciation": [],
-        "tribes_pronunciation": [],
-    }
+    normalized = {key: [] for key in DEFAULT_LEXICON}
 
     for key in DEFAULT_LEXICON.keys():
         raw_items = data.get(key, [])
@@ -369,11 +366,8 @@ def load_lexicon() -> dict[str, list[dict[str, Any]]]:
 
 
 def save_lexicon(data: dict[str, list[dict[str, Any]]]) -> None:
-    safe_data = {
-        "misc_pronunciation": data.get("misc_pronunciation", []),
-        "names_pronunciation": data.get("names_pronunciation", []),
-        "tribes_pronunciation": data.get("tribes_pronunciation", []),
-    }
+    # كل أقسام DEFAULT_LEXICON (منها english_pronunciation) -- كانت تنحذف بأي حفظ.
+    safe_data = {key: data.get(key, []) for key in DEFAULT_LEXICON}
 
     LEXICON_FILE.write_text(
         json.dumps(safe_data, ensure_ascii=False, indent=2),
