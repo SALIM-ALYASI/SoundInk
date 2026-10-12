@@ -56,6 +56,15 @@ VOICE_REGISTRY = {
         "language": "en",
         "active": True,
     },
+    # صوت الأستاذ علي اللواتي (QPay) بالعربي -- بموافقته (12 أكتوبر 2026)، لقراءة
+    # الترجمة العربية لإجاباته بمقابلة منصة الياسي فقط. المرجع من تسجيله الإنجليزي.
+    "ali_allawati_ar": {
+        "id": "ali_allawati_ar",
+        "label": "Ali Al Lawati (Arabic, consented)",
+        "ref_wav": DATA_REF_DIR / "ali_allawati.wav",
+        "language": "ar",
+        "active": True,
+    },
 }
 
 DEFAULT_VOICE_ID = "salem_podcast"
