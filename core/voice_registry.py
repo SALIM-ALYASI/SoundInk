@@ -29,6 +29,33 @@ VOICE_REGISTRY = {
         "language": "ar",
         "active": True,
     },
+    # نفس بصمة صوت سالم، لكن مضبوطة على الإنجليزي لتجربة الاستنساخ عبر
+    # اللغات (XTTS). نفس ملف المرجع، بدون تسجيل جديد.
+    "salem_podcast_en": {
+        "id": "salem_podcast_en",
+        "label": "Salem Podcast (English)",
+        "ref_wav": DATA_REF_DIR / "salem_podcast_clean.wav",
+        "language": "en",
+        "active": True,
+    },
+    # صوت د. هيثم الحجري بالإنجليزي -- بموافقته الصريحة (10 أكتوبر 2026)،
+    # لقراءة نصّه الإنجليزي بمقابلة منصة الياسي فقط. المرجع من تسجيله العربي.
+    "haitham_alhajri_en": {
+        "id": "haitham_alhajri_en",
+        "label": "Dr. Haitham Al Hajri (English, consented)",
+        "ref_wav": DATA_REF_DIR / "haitham_alhajri.wav",
+        "language": "en",
+        "active": True,
+    },
+    # صوت الأستاذ يحيى العزري بالإنجليزي -- بموافقته الصريحة (12 أكتوبر 2026)،
+    # لقراءة الترجمة الإنجليزية لإجاباته بمقابلة منصة الياسي فقط. المرجع من تسجيله العربي.
+    "yahya_alazri_en": {
+        "id": "yahya_alazri_en",
+        "label": "Yahya Al Azri (English, consented)",
+        "ref_wav": DATA_REF_DIR / "yahya_alazri.wav",
+        "language": "en",
+        "active": True,
+    },
 }
 
 DEFAULT_VOICE_ID = "salem_podcast"
