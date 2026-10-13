@@ -43,6 +43,19 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+# Background tasks live in this process only. A job still marked queued/running
+# but last touched before this process started lost its task in a restart and
+# would otherwise stay queued forever while n8n keeps polling it.
+_PROCESS_STARTED_AT = _now()
+
+
+def _is_orphaned(job: dict[str, Any]) -> bool:
+    return (
+        job.get("status") in {"queued", "running"}
+        and str(job.get("updated_at") or "") < _PROCESS_STARTED_AT
+    )
+
+
 def _validate_job_id(job_id: str) -> str:
     value = (job_id or "").strip()
     if not _SAFE_JOB_ID_RE.fullmatch(value):
@@ -180,6 +193,24 @@ async def create_speak_job(
                 )
 
             status = existing.get("status")
+            if _is_orphaned(existing):
+                # Same text (fingerprint matched), so requeue it in place.
+                existing["status"] = "queued"
+                existing["updated_at"] = _now()
+                existing["started_at"] = None
+                _save_job(existing)
+                background_tasks.add_task(
+                    _run_job,
+                    job_id,
+                    payload.text,
+                    payload.voice_id,
+                    payload.speed,
+                )
+                result = _public_job(existing)
+                result["reused"] = True
+                result["requeued"] = True
+                return result
+
             if status in {"queued", "running", "completed"}:
                 result = _public_job(existing)
                 result["reused"] = True
