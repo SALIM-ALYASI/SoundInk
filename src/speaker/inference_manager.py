@@ -42,6 +42,12 @@ TARGET_LOUDNESS_LUFS = -16.0
 # سقف أمان لمنع القطع الرقمي (clipping) بعد رفع مستوى الصوت.
 SAFETY_PEAK_CEILING = 0.97
 
+# عشوائية أقل لكل مقطع: كل جملة تتولد لحالها، وبإعدادات XTTS الافتراضية
+# (temperature 0.75) كانت النبرة تتقلب بين الجمل وتنقلب الأسماء الإنجليزية
+# داخل النص العربي. مقارنة 13 أكتوبر 2026: أخطاء نطق الخبر نزلت من 12–32% إلى
+# 0–0.6%، وثبات أصوات الضيوف ما تأثر. الصوت (voice["sampling"]) والطلب يغلبونها.
+DEFAULT_SAMPLING = {"temperature": 0.35, "top_p": 0.75, "top_k": 30}
+
 
 class InferenceManager:
     def __init__(self) -> None:
@@ -239,8 +245,9 @@ class InferenceManager:
         return temp_path
 
     def _sampling_for(self, voice: dict, sampling: dict | None) -> dict:
-        """إعدادات توليد XTTS: افتراضيات الصوت (voice["sampling"]) ثم طلب المستخدم."""
-        merged = dict(voice.get("sampling") or {})
+        """إعدادات توليد XTTS: DEFAULT_SAMPLING ثم افتراضيات الصوت (voice["sampling"]) ثم طلب المستخدم."""
+        merged = dict(DEFAULT_SAMPLING)
+        merged.update(voice.get("sampling") or {})
         merged.update(sampling or {})
         return merged
 
@@ -272,7 +279,8 @@ class InferenceManager:
 
         reference_wav = self._normalize_reference_audio(str(Path(voice["ref_wav"])))
 
-        settings = dict(sampling or {})
+        # يمر من هنا كل توليد (نص واحد أو مقاطع)، فالافتراضيات تنطبق على الكل.
+        settings = self._sampling_for(voice, sampling)
         seed = settings.pop("seed", None)
         if seed is not None:
             # نفس البذرة لكل مقطع = نفس «المزاج» فما تتغير النبرة بين المقاطع.
