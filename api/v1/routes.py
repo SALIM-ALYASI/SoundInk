@@ -59,6 +59,12 @@ class SpeakRequest(BaseModel):
     text: str = Field(..., min_length=1)
     voice_id: str | None = "voice1"
     speed: float = Field(default=1.0, ge=0.8, le=1.3)
+    # ثبات النبرة (اختياري): أقل temperature = صوت أثبت بين المقاطع، وseed ثابت
+    # يخلي كل المقاطع تمشي بنفس «المزاج». بدونها تبقى إعدادات الصوت/XTTS الافتراضية.
+    temperature: float | None = Field(default=None, ge=0.05, le=1.0)
+    top_p: float | None = Field(default=None, ge=0.1, le=1.0)
+    top_k: int | None = Field(default=None, ge=1, le=100)
+    seed: int | None = Field(default=None, ge=0)
 
 
 class SegmentCreateRequest(BaseModel):
@@ -461,10 +467,22 @@ async def speak(payload: SpeakRequest, background_tasks: BackgroundTasks):
     if not text:
         raise HTTPException(status_code=400, detail="text empty")
 
+    sampling = {
+        key: value
+        for key, value in {
+            "temperature": payload.temperature,
+            "top_p": payload.top_p,
+            "top_k": payload.top_k,
+            "seed": payload.seed,
+        }.items()
+        if value is not None
+    }
+
     audio_path = tts_manager.generate_temp_audio(
         text=prepare_tts_text(text),
         voice_id=payload.voice_id,
         speed=payload.speed,
+        sampling=sampling or None,
     )
 
     if not audio_path or not os.path.exists(audio_path):

@@ -238,12 +238,19 @@ class InferenceManager:
         self._normalized_ref_cache[ref_path] = temp_path
         return temp_path
 
+    def _sampling_for(self, voice: dict, sampling: dict | None) -> dict:
+        """إعدادات توليد XTTS: افتراضيات الصوت (voice["sampling"]) ثم طلب المستخدم."""
+        merged = dict(voice.get("sampling") or {})
+        merged.update(sampling or {})
+        return merged
+
     def _synthesize_to_file(
         self,
         text: str,
         voice: dict,
         output_path: str,
         speed: float = 1.0,
+        sampling: dict | None = None,
     ) -> str:
         clean_text = self._normalize_input_text(text)
 
@@ -265,11 +272,20 @@ class InferenceManager:
 
         reference_wav = self._normalize_reference_audio(str(Path(voice["ref_wav"])))
 
+        settings = dict(sampling or {})
+        seed = settings.pop("seed", None)
+        if seed is not None:
+            # نفس البذرة لكل مقطع = نفس «المزاج» فما تتغير النبرة بين المقاطع.
+            import torch
+
+            torch.manual_seed(int(seed))
+
         tts.tts_to_file(
             text=clean_text,
             speaker_wav=reference_wav,
             language=voice["language"],
             file_path=output_path,
+            **settings,
         )
 
         self._postprocess_speed(output_path, clean_speed)
@@ -282,6 +298,7 @@ class InferenceManager:
         text: str,
         voice_id: str | None = None,
         speed: float = 1.0,
+        sampling: dict | None = None,
     ) -> str:
         from src.speaker.segmenter import split_text_into_segments
 
@@ -314,6 +331,7 @@ class InferenceManager:
                     voice=voice,
                     output_path=temp_path,
                     speed=speed,
+                    sampling=self._sampling_for(voice, sampling),
                 )
 
                 if os.path.exists(temp_path):
