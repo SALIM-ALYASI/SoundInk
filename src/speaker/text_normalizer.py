@@ -10,6 +10,9 @@ from src.lexicon.manager import create_suggestion, load_suggestions
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 LEXICON_FILE = PROJECT_ROOT / "data" / "lexicon" / "pronunciation_lexicon.json"
+# القاموس اللي يحرره المستخدم يدويًا عبر /api/v1/lexicon (مسار مختلف عن
+# LEXICON_FILE أعلاه، اللي يخص نظام "التعلّم" الآلي من مطابقة ASR).
+MANUAL_LEXICON_FILE = PROJECT_ROOT / "data" / "pronunciation_lexicon.json"
 
 # -------------------------
 # Regex
@@ -162,6 +165,53 @@ def clean_line_for_tts(line: str) -> str:
 
 
 # -------------------------
+# Lexicon substitution
+# -------------------------
+
+def _load_lexicon_entries() -> list[tuple[str, str]]:
+    """يجمع كل مدخلات النطق (اليدوية من data/pronunciation_lexicon.json
+    + المتعلَّمة آليًا من data/lexicon/pronunciation_lexicon.json) في قائمة
+    واحدة (original, formatted)، بدون أي منهما كان يُستخدم فعليًا قبل هذا."""
+    entries: list[tuple[str, str]] = []
+
+    for path in (MANUAL_LEXICON_FILE, LEXICON_FILE):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+
+        if not isinstance(data, dict):
+            continue
+
+        for category_items in data.values():
+            if not isinstance(category_items, list):
+                continue
+            for item in category_items:
+                if not isinstance(item, dict):
+                    continue
+                original = str(item.get("original") or "").strip()
+                formatted = str(item.get("formatted") or "").strip()
+                if original and formatted and original != formatted:
+                    entries.append((original, formatted))
+
+    # الأطول أولًا، حتى لا يأكل مدخل قصير ("قبعة") جزءًا من مدخل أطول
+    # يحتويه ("القبعة") قبل أن تتاح الفرصة للمدخل الأطول نفسه.
+    entries.sort(key=lambda pair: len(pair[0]), reverse=True)
+    return entries
+
+
+def apply_lexicon(text: str) -> str:
+    if not text:
+        return text
+
+    for original, formatted in _load_lexicon_entries():
+        if original in text:
+            text = text.replace(original, formatted)
+
+    return text
+
+
+# -------------------------
 # Public API
 # -------------------------
 
@@ -170,5 +220,6 @@ def prepare_tts_text(text: str) -> str:
     text = remove_decorative_lines(text)
     text = remove_structural_markers(text)
     text = clean_line_for_tts(text)
+    text = apply_lexicon(text)
 
     return text.strip()

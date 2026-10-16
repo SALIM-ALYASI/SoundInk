@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>إنشاء توكن YouTube</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/youtube-auth.css">
+</head>
+<body>
+  <main class="shell">
+    <section class="card">
+      <div class="eyebrow">YOUTUBE OAUTH 2.0</div>
+      <h1>إنشاء توكن جديد</h1>
+      <p class="lead">فوّض حساب Google لرفع الفيديوهات وقراءة بيانات القناة والتعليقات. الصفحة لا تحفظ التوكن.</p>
+
+      <div class="scope-list">
+        <div><span>✓</span><strong>رفع الفيديوهات</strong><small>youtube.upload</small></div>
+        <div><span>✓</span><strong>قراءة القناة والتعليقات</strong><small>youtube.readonly</small></div>
+      </div>
+
+      {% if error %}<div class="notice error">{{ error }}</div>{% endif %}
+      {% if not configured %}
+        <div class="notice warning">
+          <strong>الإعدادات غير مكتملة</strong>
+          <p>أضف بيانات OAuth في ملف <code>.env</code>. استخدم رابط الرجوع التالي حرفيًا في Google Cloud:</p>
+          <code class="block">{{ redirect_uri }}</code>
+        </div>
+      {% endif %}
+
+      {% if token_json %}
+        <div class="notice success"><strong>تم إنشاء التوكن بنجاح.</strong> انسخه الآن واحفظه في مكان آمن.</div>
+        <label for="token">نتيجة التوكن</label>
+        <textarea id="token" readonly spellcheck="false">{{ token_json }}</textarea>
+        <button class="secondary" id="copy-token" type="button">نسخ التوكن</button>
+      {% else %}
+        <a class="primary {% if not configured %}disabled{% endif %}" {% if configured %}href="/youtube-auth/start"{% else %}aria-disabled="true"{% endif %}>المتابعة باستخدام Google</a>
+      {% endif %}
+
+      <p class="footnote">مهم: لا تشارك <code>access_token</code> أو <code>refresh_token</code>. احذف هذه الصفحة بعد الانتهاء إذا كانت الخدمة منشورة للعامة.</p>
+    </section>
+  </main>
+  <script>
+    const copyButton = document.getElementById('copy-token');
+    copyButton?.addEventListener('click', async () => {
+      await navigator.clipboard.writeText(document.getElementById('token').value);
+      copyButton.textContent = 'تم النسخ ✓';
+    });
+  </script>
+</body>
+</html>

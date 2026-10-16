@@ -22,3 +22,8 @@ data/outputs/
 # IDE
 .vscode/
 .idea/
+
+# بيانات تشغيل شخصية (نصوص المستخدمين) وعيّنات أصوات -- ما تنرفع للمستودع العام
+data/ref/*.wav
+!data/ref/salem_base.wav
+!data/ref/salem_podcast_clean.wav

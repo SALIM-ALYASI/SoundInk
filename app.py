@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import secrets
+
 from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.middleware.sessions import SessionMiddleware
 
 from api.v1.routes import router as api_router
 from api.v1.preset_routes import router as preset_router
@@ -28,6 +31,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# تُستخدم الجلسة فقط لحفظ OAuth state مؤقتًا بين بدء التفويض والـ callback.
+app.add_middleware(
+    SessionMiddleware,
+    # عند عدم ضبط SESSION_SECRET نستخدم قيمة عشوائية لكل تشغيل بدل سر معروف.
+    secret_key=settings.session_secret or secrets.token_urlsafe(48),
+    same_site="lax",
+    https_only=False,
+)
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
@@ -46,6 +58,11 @@ async def home(request: Request):
         name="index.html",
         request=request,
     )
+
+
+from api.youtube_auth import router as youtube_auth_router
+
+app.include_router(youtube_auth_router)
 
 
 @app.get("/health")

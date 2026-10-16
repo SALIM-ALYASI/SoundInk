@@ -44,6 +44,12 @@ class Settings:
             "tts_models/multilingual/multi-dataset/xtts_v2",
         )
 
+        # إعدادات صفحة OAuth المؤقتة الخاصة بيوتيوب.
+        self.google_client_id: str | None = os.getenv("GOOGLE_CLIENT_ID") or None
+        self.google_client_secret: str | None = os.getenv("GOOGLE_CLIENT_SECRET") or None
+        self.youtube_redirect_uri: str | None = os.getenv("YOUTUBE_REDIRECT_URI") or None
+        self.session_secret: str | None = os.getenv("SESSION_SECRET") or None
+
 
 @lru_cache
 def get_settings() -> Settings:
